@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Escala de Louvor</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module">
+    import { auth } from './firebase-config.js';
+    import { GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    const provider = new GoogleAuthProvider();
+
+    window.fazerLoginGoogle = async function() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+
+        console.log("Login realizado com sucesso:", user.email);
+        alert(`Bem-vindo, ${user.displayName}!`);
+
+        // Redireciona para o menu principal
+        window.location.href = "menu.html";
+
+      } catch (error) {
+        console.error(error);
+        alert("Erro ao fazer login: " + error.message);
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .login-card {
+      background: white;
+      padding: 50px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .login-card h1 {
+      margin-bottom: 10px;
+      color: #2c3e50;
+    }
+    .login-card p {
+      color: #666;
+      margin-bottom: 40px;
+    }
+    .btn-google {
+      background-color: #fff;
+      color: #444;
+      border: 1px solid #ddd;
+      padding: 14px 20px;
+      font-size: 17px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .btn-google:hover {
+      background-color: #f8f9fa;
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>🙌 Escala de Louvor</h1>
+    <p>Sistema de Gerenciamento de Louvor</p>
+    
+    <button onclick="fazerLoginGoogle()" class="btn-google">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="24" height="24" alt="Google">
+      Entrar com Google
+    </button>
+
+    <p style="margin-top: 40px; font-size: 14px; color: #999;">
+      Apenas usuários autorizados podem acessar
+    </p>
+  </div>
+</body>
+</html>

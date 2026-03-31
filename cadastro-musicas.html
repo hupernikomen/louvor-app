@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Músicas - Louvor</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const musicasRef = collection(db, "musicas");
+    let musicaEditandoId = null;
+
+    // ====================== CARREGAR MÚSICAS ======================
+    async function carregarMusicas() {
+      const tbody = document.querySelector('#tabelaMusicas tbody');
+      tbody.innerHTML = '';
+
+      try {
+        const querySnapshot = await getDocs(musicasRef);
+        
+        querySnapshot.forEach((documento) => {
+          const m = documento.data();
+          const id = documento.id;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${m.titulo}</td>
+            <td>${m.tom || '-'}</td>
+            <td style="text-align:center; font-weight:bold; color: ${m.nivelAnimacao >= 4 ? '#27ae60' : '#f39c12'}">
+              ${m.nivelAnimacao}
+            </td>
+            <td>${m.slot || '-'}</td>
+            <td>
+              <button onclick="editarMusica('${id}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:5px; margin-right:5px;">Editar</button>
+              <button onclick="excluirMusica('${id}')" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:5px;">Excluir</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error("Erro ao carregar:", e);
+      }
+    }
+
+    // ====================== EDITAR MÚSICA ======================
+    window.editarMusica = async function(id) {
+      try {
+        const snapshot = await getDocs(musicasRef);
+        const musicaDoc = snapshot.docs.find(d => d.id === id);
+        const m = musicaDoc.data();
+
+        document.getElementById('titulo').value = m.titulo || '';
+        document.getElementById('tom').value = m.tom || '';
+        document.getElementById('nivelAnimacao').value = m.nivelAnimacao || '';
+        document.getElementById('slot').value = m.slot || '';
+        document.getElementById('frequencia').value = m.frequencia || 50;
+        document.getElementById('observacoes').value = m.observacoes || '';
+
+        musicaEditandoId = id;
+        document.querySelector('button[type="submit"]').textContent = "💾 Atualizar Música";
+      } catch (e) {
+        alert("Erro ao carregar música: " + e.message);
+      }
+    };
+
+    // ====================== SALVAR / ATUALIZAR ======================
+    document.getElementById('formMusica').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const musica = {
+        titulo: document.getElementById('titulo').value.trim(),
+        tom: document.getElementById('tom').value.trim().toUpperCase() || null,
+        nivelAnimacao: parseInt(document.getElementById('nivelAnimacao').value),
+        slot: document.getElementById('slot').value,
+        frequencia: parseInt(document.getElementById('frequencia').value) || 50,
+        observacoes: document.getElementById('observacoes').value.trim(),
+        ultimaUso: null,
+        vezesUsada: 0,
+        criadoEm: new Date().toISOString().split('T')[0]
+      };
+
+      try {
+        if (musicaEditandoId) {
+          const docRef = doc(db, "musicas", musicaEditandoId);
+          await updateDoc(docRef, musica);
+          alert("✅ Música atualizada com sucesso!");
+          musicaEditandoId = null;
+          document.querySelector('button[type="submit"]').textContent = "💾 Salvar Música";
+        } else {
+          await addDoc(musicasRef, musica);
+          alert("✅ Música cadastrada com sucesso!");
+        }
+
+        document.getElementById('formMusica').reset();
+        carregarMusicas();
+      } catch (e) {
+        alert("Erro ao salvar: " + e.message);
+      }
+    });
+
+    // ====================== EXCLUIR ======================
+    window.excluirMusica = async function(id) {
+      if (confirm("Tem certeza que deseja excluir esta música?")) {
+        try {
+          await deleteDoc(doc(db, "musicas", id));
+          alert("Música excluída!");
+          carregarMusicas();
+        } catch (e) {
+          alert("Erro ao excluir: " + e.message);
+        }
+      }
+    };
+
+    window.onload = carregarMusicas;
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 Cadastro de Músicas</h1>
+
+    <div class="card">
+      <h2 id="tituloForm">Nova Música</h2>
+      <form id="formMusica">
+        <label>Título da Música *</label>
+        <input type="text" id="titulo" required placeholder="Ex: Oceans (Where Feet May Fail)">
+
+        <label>Tom Principal (opcional)</label>
+        <input type="text" id="tom" placeholder="Ex: D, C, G">
+
+        <label>Nível de Animação (1 a 5) *</label>
+        <select id="nivelAnimacao" required>
+          <option value="">Selecione o nível...</option>
+          <option value="1">1 - Bem calma / Suave</option>
+          <option value="2">2 - Calma</option>
+          <option value="3">3 - Moderada</option>
+          <option value="4">4 - Animada</option>
+          <option value="5">5 - Muito animada / Alegre</option>
+        </select>
+
+        <label>Slot / Momento Preferido (opcional)</label>
+        <select id="slot">
+          <option value="">Nenhum</option>
+          <option value="preludio">Prelúdio</option>
+          <option value="abertura">Abertura</option>
+          <option value="principal">Principal / 3ª música</option>
+          <option value="ceia">Ceia</option>
+          <option value="oferta">Oferta</option>
+          <option value="batismo">Batismo</option>
+          <option value="final">Final / Encerramento</option>
+        </select>
+
+        <label>Frequência (%) no slot escolhido</label>
+        <input type="number" id="frequencia" min="0" max="100" value="50">
+
+        <label>Observações</label>
+        <textarea id="observacoes" rows="3" placeholder="Ex: Fica boa no tom C com voz feminina..."></textarea>
+
+        <button type="submit">💾 Salvar Música</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Músicas Cadastradas</h2>
+      <table id="tabelaMusicas">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Tom</th>
+            <th>Nível</th>
+            <th>Slot</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="index.html" style="color: #3498db; text-decoration: none;">← Voltar ao Menu Principal</a>
+    </div>
+  </div>
+</body>
+</html>

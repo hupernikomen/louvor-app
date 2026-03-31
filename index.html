@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escalas de Louvor - Igreja</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const escalasRef = collection(db, "escalasCulto");
+
+    async function carregarEscalas() {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = '<p style="text-align:center; padding:60px; color:#777;">Carregando escalas recentes...</p>';
+
+      try {
+        const q = query(escalasRef, orderBy("criadoEm", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          feed.innerHTML = `
+            <div style="text-align:center; padding:80px 20px; color:#666;">
+              <h2>Nenhuma escala cadastrada ainda</h2>
+              <p>Quando o líder gerar escalas, elas aparecerão aqui.</p>
+            </div>`;
+          return;
+        }
+
+        feed.innerHTML = '';
+
+        snapshot.forEach(doc => {
+          const e = doc.data();
+
+          const card = document.createElement('div');
+          card.className = 'escala-card';
+          card.innerHTML = `
+            <div class="card-header">
+              <h3>${new Date(e.data).toLocaleDateString('pt-BR', { 
+                weekday: 'long', 
+                day: '2-digit', 
+                month: 'long' 
+              })}</h3>
+              <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
+            </div>
+
+            <div class="musicas">
+              <h4>🎵 Músicas do Culto</h4>
+              <ol>
+                ${e.musicas.map(m => `
+                  <li>
+                    <strong>${m.titulo}</strong> 
+                    <span class="tom">(${m.tom || '-'})</span> 
+                    <span class="nivel">Nível ${m.nivelAnimacao}</span>
+                  </li>
+                `).join('')}
+              </ol>
+            </div>
+
+            <div class="equipe">
+              <h4>👥 Equipe</h4>
+              <div class="membros">
+                ${e.equipe.map(m => `
+                  <span class="membro-tag">${m.nome} <small>(${m.funcao})</small></span>
+                `).join('')}
+              </div>
+            </div>
+
+            ${e.observacoes ? `
+              <div class="observacoes">
+                <strong>Obs:</strong> ${e.observacoes}
+              </div>` : ''}
+          `;
+          feed.appendChild(card);
+        });
+
+      } catch (error) {
+        console.error(error);
+        feed.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar as escalas.</p>';
+      }
+    }
+
+    window.onload = carregarEscalas;
+  </script>
+
+  <style>
+    .escala-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: linear-gradient(135deg, #3498db, #2c3e50);
+      color: white;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tipo-culto {
+      background: rgba(255,255,255,0.25);
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.95em;
+      font-weight: 600;
+    }
+    .musicas, .equipe {
+      padding: 20px;
+    }
+    .musicas h4, .equipe h4 {
+      color: #2c3e50;
+      margin-bottom: 12px;
+    }
+    .membros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .membro-tag {
+      background: #e8f0fe;
+      color: #2c3e50;
+      padding: 8px 16px;
+      border-radius: 25px;
+      font-size: 0.95em;
+    }
+    .observacoes {
+      background: #fff9e6;
+      padding: 15px 22px;
+      border-top: 1px solid #f1e0b0;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HEADER COM BOTÃO DE LOGIN -->
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 10px 0;">
+      <h1 style="margin: 0; color: #2c3e50;">🙌 Escalas de Louvor</h1>
+      <a href="login.html" 
+         style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+        🔑 Fazer Login
+      </a>
+    </header>
+
+    <div id="feed"></div>
+
+    <!-- Links rápidos -->
+    <div style="text-align:center; margin-top: 50px; padding: 20px; background:#f8f9fa; border-radius:12px;">
+      <a href="cadastro-musicas.html" style="margin:0 15px; color:#3498db;">Cadastrar Músicas</a> |
+      <a href="cadastro-membros.html" style="margin:0 15px; color:#3498db;">Cadastrar Equipe</a> |
+      <a href="gerar-escala.html" style="margin:0 15px; color:#3498db;">Gerar Nova Escala</a>
+    </div>
+  </div>
+</body>
+</html>

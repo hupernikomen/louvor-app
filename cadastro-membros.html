@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Membros da Equipe - Louvor</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    const membrosRef = collection(db, "membrosEquipe");
+    let membroEditandoId = null;
+
+    // ====================== CARREGAR MEMBROS ======================
+    async function carregarMembros() {
+      const tbody = document.querySelector('#tabelaMembros tbody');
+      tbody.innerHTML = '';
+
+      try {
+        const snapshot = await getDocs(membrosRef);
+        snapshot.forEach((docSnap) => {
+          const membro = docSnap.data();
+          const id = docSnap.id;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${membro.nome}</td>
+            <td>${membro.funcao}</td>
+            <td>
+              <button onclick="editarMembro('${id}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:5px; margin-right:5px;">Editar</button>
+              <button onclick="excluirMembro('${id}')" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:5px;">Excluir</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // ====================== EDITAR MEMBRO ======================
+    window.editarMembro = async function(id) {
+      try {
+        const snapshot = await getDocs(membrosRef);
+        const membroDoc = snapshot.docs.find(d => d.id === id);
+        const membro = membroDoc.data();
+
+        document.getElementById('nome').value = membro.nome || '';
+        document.getElementById('funcao').value = membro.funcao || '';
+
+        membroEditandoId = id;
+        document.querySelector('button[type="submit"]').textContent = "Atualizar Membro";
+      } catch (e) {
+        alert("Erro ao carregar membro: " + e.message);
+      }
+    };
+
+    // ====================== SALVAR OU ATUALIZAR ======================
+    document.getElementById('formMembro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const membro = {
+        nome: document.getElementById('nome').value.trim(),
+        funcao: document.getElementById('funcao').value,
+        ativo: true,
+        criadoEm: new Date().toISOString().split('T')[0]
+      };
+
+      try {
+        if (membroEditandoId) {
+          const docRef = doc(db, "membrosEquipe", membroEditandoId);
+          await updateDoc(docRef, membro);
+          alert("✅ Membro atualizado com sucesso!");
+          membroEditandoId = null;
+          document.querySelector('button[type="submit"]').textContent = "Salvar Membro";
+        } else {
+          await addDoc(membrosRef, membro);
+          alert("✅ Membro cadastrado com sucesso!");
+        }
+
+        document.getElementById('formMembro').reset();
+        carregarMembros();
+      } catch (e) {
+        alert("Erro ao salvar: " + e.message);
+      }
+    });
+
+    // ====================== EXCLUIR ======================
+    window.excluirMembro = async function(id) {
+      if (confirm("Deseja realmente excluir este membro?")) {
+        try {
+          await deleteDoc(doc(db, "membrosEquipe", id));
+          alert("Membro excluído!");
+          carregarMembros();
+        } catch (e) {
+          alert("Erro ao excluir: " + e.message);
+        }
+      }
+    };
+
+    window.onload = carregarMembros;
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>👥 Cadastro de Membros da Equipe</h1>
+
+    <div class="card">
+      <h2 id="tituloForm">Novo Membro</h2>
+      <form id="formMembro">
+        <label>Nome Completo *</label>
+        <input type="text" id="nome" required placeholder="Ex: João Silva">
+
+        <label>Função Principal *</label>
+        <select id="funcao" required>
+          <option value="">Selecione a função...</option>
+          <option value="vocal">Vocal</option>
+          <option value="violao">Violão</option>
+          <option value="teclado">Teclado</option>
+          <option value="baixo">Baixo</option>
+          <option value="bateria">Bateria</option>
+          <option value="guitarra">Guitarra</option>
+          <option value="backing">Backing Vocal</option>
+        </select>
+
+        <button type="submit">Salvar Membro</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Membros Cadastrados</h2>
+      <table id="tabelaMembros">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Função</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="index.html" style="color: #3498db; text-decoration: none;">← Voltar ao Menu Principal</a>
+    </div>
+  </div>
+</body>
+</html>

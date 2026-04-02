@@ -7,24 +7,51 @@
   <link rel="stylesheet" href="style.css">
   <script type="module">
     import { auth } from './firebase-config.js';
-    import { GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     const provider = new GoogleAuthProvider();
+    const emailPermitido = "hupcontato@gmail.com";
+
+    // Verifica estado de autenticação
+    onAuthStateChanged(auth, (user) => {
+      const menuLogado = document.getElementById('menu-logado');
+      const btnLogin = document.getElementById('btn-login');
+
+      if (user && user.email.toLowerCase() === emailPermitido.toLowerCase()) {
+        btnLogin.style.display = 'none';
+        menuLogado.style.display = 'block';
+      } else {
+        btnLogin.style.display = 'block';
+        menuLogado.style.display = 'none';
+      }
+    });
 
     window.fazerLoginGoogle = async function() {
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        console.log("Login realizado com sucesso:", user.email);
-        alert(`Bem-vindo, ${user.displayName}!`);
+        if (user.email.toLowerCase() !== emailPermitido.toLowerCase()) {
+          await signOut(auth);
+          alert("❌ Acesso negado!\n\nApenas o email hupcontato@gmail.com tem permissão.");
+          return;
+        }
 
-        // Redireciona para o menu principal
-        window.location.href = "menu.html";
+        alert(`✅ Bem-vindo, ${user.displayName || 'Líder'}!`);
+        // Recarrega a página para atualizar o menu
+        window.location.reload();
 
       } catch (error) {
         console.error(error);
         alert("Erro ao fazer login: " + error.message);
+      }
+    };
+
+    window.fazerLogout = async function() {
+      if (confirm("Deseja realmente sair?")) {
+        await signOut(auth);
+        alert("Logout realizado.");
+        window.location.reload();
       }
     };
   </script>
@@ -32,7 +59,7 @@
   <style>
     body {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -41,28 +68,24 @@
     }
     .login-card {
       background: white;
-      padding: 50px 40px;
+      padding: 60px 40px;
       border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
       text-align: center;
-      max-width: 400px;
+      max-width: 460px;
       width: 90%;
     }
     .login-card h1 {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       color: #2c3e50;
-    }
-    .login-card p {
-      color: #666;
-      margin-bottom: 40px;
     }
     .btn-google {
       background-color: #fff;
       color: #444;
       border: 1px solid #ddd;
-      padding: 14px 20px;
+      padding: 16px 24px;
       font-size: 17px;
-      border-radius: 8px;
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -70,28 +93,65 @@
       cursor: pointer;
       transition: all 0.3s;
       width: 100%;
-      margin: 0 auto;
+      margin-bottom: 20px;
     }
     .btn-google:hover {
       background-color: #f8f9fa;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
       transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .menu-logado {
+      margin-top: 30px;
+      padding-top: 25px;
+      border-top: 1px solid #eee;
+    }
+    .menu-logado a {
+      display: block;
+      background: #3498db;
+      color: white;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .menu-logado a:hover {
+      background: #2980b9;
     }
   </style>
 </head>
 <body>
   <div class="login-card">
     <h1>🙌 Escala de Louvor</h1>
-    <p>Sistema de Gerenciamento de Louvor</p>
-    
-    <button onclick="fazerLoginGoogle()" class="btn-google">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="24" height="24" alt="Google">
+    <p>Sistema interno da Igreja</p>
+
+    <!-- Botão de Login -->
+    <button id="btn-login" onclick="fazerLoginGoogle()" class="btn-google">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
+           width="26" height="26" alt="Google">
       Entrar com Google
     </button>
 
-    <p style="margin-top: 40px; font-size: 14px; color: #999;">
-      Apenas usuários autorizados podem acessar
-    </p>
+    <!-- Menu quando já está logado -->
+    <div id="menu-logado" style="display: none;">
+      <p style="color: #27ae60; font-weight: 600; margin-bottom: 20px;">
+        ✅ Você está logado como <strong>hupcontato@gmail.com</strong>
+      </p>
+
+      <div class="menu-logado">
+        <a href="index.html">📊 Ver Feed de Escalas</a>
+        <a href="gerar-escala.html">📅 Gerar Nova Escala</a>
+        <a href="cadastro-musicas.html">🎵 Cadastrar Músicas</a>
+        <a href="cadastro-membros.html">👥 Cadastrar Equipe</a>
+      </div>
+
+      <button onclick="fazerLogout()" 
+              style="margin-top:25px; background:none; border:none; color:#e74c3c; cursor:pointer;">
+        Sair da conta
+      </button>
+    </div>
+
+
   </div>
 </body>
 </html>

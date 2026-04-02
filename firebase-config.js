@@ -1,4 +1,5 @@
 
+
 // firebase-config.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -16,5 +17,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// Isso faz o login persistir mesmo após fechar o navegador
+auth.setPersistence("local");   // ← Adicionado isso
 
 export { db, auth };

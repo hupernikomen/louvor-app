@@ -36,9 +36,26 @@
 
         feed.innerHTML = '';
 
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Considera apenas a data (sem hora)
+
+        let encontrouEscala = false;
+
         snapshot.forEach(doc => {
           const e = doc.data();
           const escalaId = doc.id;
+
+          // ==================== REGRA: MOSTRAR APENAS DATAS FUTURAS ====================
+          if (!e.data) return;
+
+          const [ano, mes, dia] = e.data.split('-').map(Number);
+          const dataEscala = new Date(ano, mes - 1, dia);
+          dataEscala.setHours(0, 0, 0, 0);
+
+          // Se a data da escala for anterior a hoje → não mostra
+          if (dataEscala < hoje) return;
+
+          encontrouEscala = true;
 
           const card = document.createElement('div');
           card.className = 'escala-card';
@@ -50,11 +67,9 @@
             };
           }
 
-          // ==================== CORREÇÃO DA DATA NA EXIBIÇÃO ====================
+          // Formatação correta da data
           let dataFormatada = "Data inválida";
           if (e.data) {
-            // Se for string no formato YYYY-MM-DD
-            const [ano, mes, dia] = e.data.split('-').map(Number);
             const dataCorreta = new Date(ano, mes - 1, dia);
             dataFormatada = dataCorreta.toLocaleDateString('pt-BR', { 
               weekday: 'short', 
@@ -65,7 +80,7 @@
 
           card.innerHTML = `
             <div class="card-header">
-              <span class="tipo-culto">${e.tipoCulto.replace('_e_', ' e ').toUpperCase()}</span>
+              <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
               <div>
                 <span class="data">${dataFormatada}</span>
               </div>
@@ -97,6 +112,15 @@
 
           feed.appendChild(card);
         });
+
+        // Mensagem caso não haja escalas futuras
+        if (!encontrouEscala) {
+          feed.innerHTML = `
+            <div style="text-align:center; padding:100px 20px; color:#999;">
+              <h2>Nenhuma escala futura encontrada</h2>
+              <p style="margin-top:10px;">As próximas escalas aparecerão aqui.</p>
+            </div>`;
+        }
 
       } catch (error) {
         console.error(error);
@@ -166,7 +190,7 @@
 
     .card-header {
       background: #f8f9fc;
-      padding: 4px 20px;
+      padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -180,9 +204,11 @@
     }
 
     .tipo-culto {
+      background: #e3f2fd;
+      color: #1565c0;
       padding: 6px 12px;
       border-radius: 20px;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       font-weight: 600;
     }
 

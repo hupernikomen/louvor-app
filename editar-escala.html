@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar Escala - Louvor</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module">
+    import { db, auth } from './firebase-config.js';
+    import { 
+      doc, 
+      getDoc, 
+      updateDoc,
+      collection,
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    let escalaId = null;
+    let escalaAtual = null;
+    let todasMusicas = [];
+
+    // Proteção de login
+    onAuthStateChanged(auth, (user) => {
+      if (!user || user.email !== "hupcontato@gmail.com") {
+        alert("Você não tem permissão para editar escalas.");
+        window.location.href = "login.html";
+      }
+    });
+
+    function getIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');
+    }
+
+    async function carregarTodasMusicas() {
+      try {
+        const musRef = collection(db, "musicas");
+        const snapshot = await getDocs(musRef);
+        todasMusicas = snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        }));
+      } catch (e) {
+        console.error("Erro ao carregar músicas:", e);
+      }
+    }
+
+    function renderizarSelectsMusicas() {
+      const container = document.getElementById('musicasContainer');
+      container.innerHTML = '';
+
+      for (let i = 0; i < 5; i++) {
+        const musicaAtual = escalaAtual.musicas[i] || {};
+
+        const div = document.createElement('div');
+        div.className = 'musica-edit';
+        div.innerHTML = `
+          <label><strong>${i + 1}ª Música</strong></label>
+          <select class="select-musica" data-index="${i}">
+            <option value="">Selecione uma música...</option>
+            ${todasMusicas.map(mus => `
+              <option value="${mus.id}" 
+                ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
+                ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''} - Nível ${mus.nivelAnimacao}
+              </option>
+            `).join('')}
+          </select>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    async function carregarEscala() {
+      escalaId = getIdFromUrl();
+      if (!escalaId) {
+        alert("ID da escala não encontrado.");
+        window.history.back();
+        return;
+      }
+
+      await carregarTodasMusicas();
+
+      try {
+        const docRef = doc(db, "escalasCulto", escalaId);
+        const docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          alert("Escala não encontrada.");
+          window.history.back();
+          return;
+        }
+
+        escalaAtual = docSnap.data();
+
+        // Preencher campos
+        document.getElementById('data').value = escalaAtual.data || '';
+        document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
+        document.getElementById('observacoes').value = escalaAtual.observacoes || '';
+
+        renderizarSelectsMusicas();
+
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao carregar a escala.");
+      }
+    }
+
+    window.salvarAlteracoes = async function() {
+      if (!escalaId) return;
+
+      const selects = document.querySelectorAll('.select-musica');
+      const novasMusicas = [];
+
+      for (let select of selects) {
+        const musicaId = select.value;
+        if (!musicaId) {
+          alert("Por favor, selecione uma música para todas as 5 posições.");
+          return;
+        }
+
+        const musica = todasMusicas.find(m => m.id === musicaId);
+        novasMusicas.push({
+          titulo: musica.titulo,
+          tom: musica.tom,
+          nivelAnimacao: musica.nivelAnimacao,
+          slot: musica.slot || null
+        });
+      }
+
+      // ==================== MANEIRA CORRETA DE SALVAR DATA ====================
+      let dataInput = document.getElementById('data').value;
+      let dataSalvar = null;
+
+      if (dataInput) {
+        // Cria a data no fuso horário local do Brasil de forma segura
+        const [ano, mes, dia] = dataInput.split('-').map(Number);
+        
+        // Criamos a data com horário 12:00 (meio-dia) para evitar problemas de fuso
+        const dataLocal = new Date(ano, mes - 1, dia, 12, 0, 0);
+        
+        // Convertemos para string YYYY-MM-DD (formato que o Firestore entende bem)
+        dataSalvar = dataLocal.toISOString().split('T')[0];
+      }
+
+      const dadosAtualizados = {
+        data: dataSalvar,
+        tipoCulto: document.getElementById('tipoCulto').value,
+        musicas: novasMusicas,
+        observacoes: document.getElementById('observacoes').value.trim()
+      };
+
+      try {
+        const docRef = doc(db, "escalasCulto", escalaId);
+        await updateDoc(docRef, dadosAtualizados);
+        
+        alert("✅ Escala atualizada com sucesso!");
+        window.location.href = "index.html";
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar alterações: " + e.message);
+      }
+    };
+
+    window.onload = carregarEscala;
+  </script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background-color: #f8f9fc;
+      color: #333;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      background: white;
+      padding: 14px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      z-index: 100;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .container {
+      padding: 20px 18px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+      padding: 22px;
+      border: 1px solid #f0f0f0;
+    }
+
+    label {
+      display: block;
+      margin: 18px 0 8px;
+      font-weight: 600;
+      color: #455a64;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .musica-edit {
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 25px;
+    }
+
+    button:hover { background: #219653; }
+
+    .btn-voltar {
+      background: #95a5a6;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>Editar Escala</h1>
+    <a href="index.html" style="color:#3498db; text-decoration:none;">← Voltar</a>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h2>Editar Escala</h2>
+
+      <label>Data do Culto</label>
+      <input type="date" id="data">
+
+      <label>Tipo de Culto</label>
+      <select id="tipoCulto">
+        <option value="domingo_manha">Domingo Manhã</option>
+        <option value="domingo_noite">Domingo Noite</option>
+        <option value="quarta">Quarta-feira</option>
+        <option value="ceia">Culto de Ceia</option>
+        <option value="especial">Culto Especial</option>
+      </select>
+
+      <label>Músicas do Culto</label>
+      <div id="musicasContainer"></div>
+
+      <label>Observações</label>
+      <textarea id="observacoes" rows="4" placeholder="Observações adicionais..."></textarea>
+
+      <button onclick="salvarAlteracoes()">💾 Salvar Alterações</button>
+      <button onclick="window.history.back()" class="btn-voltar">Cancelar</button>
+    </div>
+  </div>
+</body>
+</html>

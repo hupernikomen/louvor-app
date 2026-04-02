@@ -6,10 +6,16 @@
   <title>Escalas de Louvor</title>
   <link rel="stylesheet" href="style.css">
   <script type="module">
-    import { db } from './firebase-config.js';
+    import { db, auth } from './firebase-config.js';
     import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     const escalasRef = collection(db, "escalasCulto");
+    let usuarioLogado = false;
+
+    onAuthStateChanged(auth, (user) => {
+      usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
+    });
 
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
@@ -32,19 +38,36 @@
 
         snapshot.forEach(doc => {
           const e = doc.data();
-
+          const escalaId = doc.id;
 
           const card = document.createElement('div');
           card.className = 'escala-card';
+
+          if (usuarioLogado) {
+            card.style.cursor = 'pointer';
+            card.onclick = () => {
+              window.location.href = `editar-escala.html?id=${escalaId}`;
+            };
+          }
+
+          // ==================== CORREÇÃO DA DATA NA EXIBIÇÃO ====================
+          let dataFormatada = "Data inválida";
+          if (e.data) {
+            // Se for string no formato YYYY-MM-DD
+            const [ano, mes, dia] = e.data.split('-').map(Number);
+            const dataCorreta = new Date(ano, mes - 1, dia);
+            dataFormatada = dataCorreta.toLocaleDateString('pt-BR', { 
+              weekday: 'short', 
+              day: '2-digit', 
+              month: 'short'
+            });
+          }
+
           card.innerHTML = `
             <div class="card-header">
               <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
               <div>
-                <span class="data">${new Date(e.data).toLocaleDateString('pt-BR', { 
-                  weekday: 'short', 
-                  day: '2-digit', 
-                  month: 'short'
-                })}</span>
+                <span class="data">${dataFormatada}</span>
               </div>
             </div>
 
@@ -52,7 +75,7 @@
               <div class="musica-list">
                 ${e.musicas.map(m => `
                   <div class="musica-item">
-                    <span class="titulo">${m.titulo} ${m.tom ? `- ${m?.tom}` : ''}</span>
+                    <span class="titulo">${m.titulo} ${m.tom ? `- ${m.tom}` : ''}</span>
                   </div>
                 `).join('')}
               </div>
@@ -68,9 +91,10 @@
 
             ${e.observacoes ? `
               <div class="observacoes">
-                <strong>Observação:</strong> ${e.observacoes}
+                <strong>Obs.:</strong> ${e.observacoes}
               </div>` : ''}
           `;
+
           feed.appendChild(card);
         });
 
@@ -93,7 +117,6 @@
       line-height: 1.6;
     }
 
-    /* Header Fixo e Elegante */
     .header {
       position: sticky;
       top: 0;
@@ -131,7 +154,6 @@
       margin: 0px
     }
 
-    /* Card Elegante e Minimalista */
     .escala-card {
       background: white;
       border-radius: 16px;
@@ -169,11 +191,9 @@
       padding: 20px;
     }
 
-
     .musica-list {
       display: flex;
       flex-direction: column;
-      /* gap: 12px; */
     }
 
     .musica-item {
@@ -191,18 +211,8 @@
       color: #263238;
     }
 
-    .info {
-      font-size: 0.9rem;
-      color: #546e7a;
-    }
-
     .equipe {
       padding: 0 20px 20px 20px;
-    }
-
-    .equipe h4 {
-      color: #455a64;
-      margin-bottom: 12px;
     }
 
     .membros {
@@ -227,7 +237,6 @@
       font-size: 0.95rem;
     }
 
-    /* Responsividade */
     @media (max-width: 480px) {
       .container {
         margin: 0px;
@@ -239,7 +248,6 @@
   </style>
 </head>
 <body>
-  <!-- Header Fixo -->
   <header class="header">
     <p>Escala de Louvor</p>
     <a href="login.html" class="btn-login">Login</a>

@@ -13,7 +13,7 @@
 
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
-      feed.innerHTML = '<p style="text-align:center; padding:60px; color:#777;">Carregando escalas recentes...</p>';
+      feed.innerHTML = '<p style="text-align:center; padding:80px 20px; color:#888;">Carregando escalas recentes...</p>';
 
       try {
         const q = query(escalasRef, orderBy("criadoEm", "desc"));
@@ -21,9 +21,9 @@
 
         if (snapshot.empty) {
           feed.innerHTML = `
-            <div style="text-align:center; padding:80px 20px; color:#666;">
-              <h2>Nenhuma escala cadastrada ainda</h2>
-              <p>Quando o líder gerar escalas, elas aparecerão aqui.</p>
+            <div style="text-align:center; padding:100px 20px; color:#999;">
+              <h2>Nenhuma escala encontrada</h2>
+              <p style="margin-top:10px;">As escalas geradas aparecerão aqui.</p>
             </div>`;
           return;
         }
@@ -38,23 +38,23 @@
           card.innerHTML = `
             <div class="card-header">
               <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
-              <span>${new Date(e.data).toLocaleDateString('pt-BR', { 
-                weekday: 'long', 
-                day: '2-digit', 
-                month: 'long' 
-              })}</span>
+              <div>
+                <span class="data">${new Date(e.data).toLocaleDateString('pt-BR', { 
+                  weekday: 'long', 
+                  day: '2-digit', 
+                  month: 'long' 
+                })}</span>
+              </div>
             </div>
 
             <div class="musicas">
-              <ol>
+              <div class="musica-list">
                 ${e.musicas.map(m => `
-                  <li>
-                    <strong>${m.titulo}</strong> 
-                    <span class="tom">(${m.tom || '-'})</span> 
-                    <span class="nivel">Nível ${m.nivelAnimacao}</span>
-                  </li>
+                  <div class="musica-item">
+                    <span class="titulo">${m.titulo} ${m.tom ? `- ${m?.tom}` : ''}</span>
+                  </div>
                 `).join('')}
-              </ol>
+              </div>
             </div>
 
             <div class="equipe">
@@ -67,7 +67,7 @@
 
             ${e.observacoes ? `
               <div class="observacoes">
-                <strong>Obs:</strong> ${e.observacoes}
+                <strong>Observação:</strong> ${e.observacoes}
               </div>` : ''}
           `;
           feed.appendChild(card);
@@ -75,7 +75,7 @@
 
       } catch (error) {
         console.error(error);
-        feed.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar as escalas.</p>';
+        feed.innerHTML = '<p style="color:red; text-align:center; padding:40px;">Erro ao carregar as escalas.</p>';
       }
     }
 
@@ -83,127 +83,170 @@
   </script>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f7fa;
-      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background-color: #f8f9fc;
+      color: #333;
+      line-height: 1.6;
     }
 
-    /* Header Fixo no Topo */
+    /* Header Fixo e Elegante */
     .header {
       position: sticky;
       top: 0;
-      background: #fff;
-      color: white;
+      background: white;
       padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
       z-index: 100;
     }
 
     .header h1 {
-      font-size: 1.4em;
-      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #2c3e50;
     }
 
     .btn-login {
-      background: rgba(255,255,255,0.25);
+      background: #3498db;
       color: white;
-      border: none;
-      padding: 10px 16px;
+      padding: 10px 18px;
       border-radius: 8px;
       text-decoration: none;
-      font-size: 0.95em;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s;
     }
 
     .btn-login:hover {
-      background: rgba(255,255,255,0.4);
+      background: #2980b9;
     }
 
     .container {
-      padding: 20px;
+      padding: 20px 18px;
       max-width: 100%;
     }
 
+    /* Card Elegante e Minimalista */
     .escala-card {
-      padding: 22px;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+      margin-bottom: 24px;
       overflow: hidden;
+      border: 1px solid #f0f0f0;
     }
 
     .card-header {
-      background: #fff;
-      color: rgb(28, 28, 28);
+      background: #f8f9fc;
+      padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .data {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 1.05rem;
     }
 
     .tipo-culto {
-      background: rgba(255,255,255,0.25);
-      border-radius: 30px;
-      font-size: 0.9em;
-    
+      background: #e3f2fd;
+      color: #1565c0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
 
     .musicas {
-      padding: 22px;
+      padding: 20px;
     }
 
+    .musicas h4 {
+      color: #455a64;
+      margin-bottom: 14px;
+      font-size: 1.05rem;
+    }
 
-    .musicas h4, .equipe h4 {
-      color: #2c3e50;
+    .musica-list {
+      display: flex;
+      flex-direction: column;
+      /* gap: 12px; */
+    }
+
+    .musica-item {
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .musica-item:last-child {
+      border-bottom: none;
+    }
+
+    .titulo {
+      display: block;
+      margin-bottom: 4px;
+      color: #263238;
+    }
+
+    .info {
+      font-size: 0.9rem;
+      color: #546e7a;
+    }
+
+    .equipe {
+      padding: 0 20px 20px 20px;
+    }
+
+    .equipe h4 {
+      color: #455a64;
       margin-bottom: 12px;
     }
 
     .membros {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 8px;
     }
 
     .membro-tag {
-      background: #f6f8fb;
-      color: #2c3e50;
-      padding: 6px 14px;
-      border-radius: 25px;
-      font-size: 0.85em;
+      background: #f1f5f9;
+      color: #334155;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.88rem;
     }
 
     .observacoes {
-      background: #fff9e6;
-      padding: 15px 20px;
-      border-top: 1px solid #f1e0b0;
-      color: #555;
+      background: #fff8e1;
+      padding: 16px 20px;
+      border-top: 1px solid #ffeaa7;
+      color: #5d4037;
+      font-size: 0.95rem;
     }
 
-    /* Responsivo */
+    /* Responsividade */
     @media (max-width: 480px) {
-      .header h1 {
-        font-size: 1.25em;
-      }
       .container {
-        padding: 15px;
+        padding: 16px 14px;
+      }
+      .header {
+        padding: 14px 18px;
       }
     }
   </style>
 </head>
 <body>
-  <!-- HEADER FIXO -->
+  <!-- Header Fixo -->
   <header class="header">
-    <h1>Escala de Louvor</h1>
-    <a href="login.html" class="btn-login">🔑</a>
+    <h1>Escalas de Louvor</h1>
+    <a href="login.html" class="btn-login">🔑 Login</a>
   </header>
 
   <div class="container">

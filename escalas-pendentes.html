@@ -4,25 +4,220 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
   <title>Escalas Pendentes - Aprovar</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+
+    .help-text {
+      text-align: center;
+      color: #6c757d;
+      font-size: 1.1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .pendentes-grid {
+      display: grid;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .escala-pendente {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .escala-pendente:hover {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .pendente-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .pendente-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-aprovar,
+    .btn-editar,
+    .btn-voltar {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-aprovar {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-aprovar:hover {
+      background: #218838;
+      transform: translateY(-1px);
+    }
+
+    .btn-editar {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    .btn-editar:hover {
+      background: #e0a800;
+      transform: translateY(-1px);
+    }
+
+    .musicas-preview {
+      margin-bottom: 1.5rem;
+    }
+
+    .musica-item {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f1f3f4;
+      font-size: 1rem;
+      color: #495057;
+    }
+
+    .musica-item:last-child {
+      border-bottom: none;
+    }
+
+    .equipe-preview {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #6c757d;
+    }
+
+    .loading,
+    .error {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #6c757d;
+      font-size: 1.1rem;
+    }
+
+    .error {
+      color: #dc3545;
+    }
+
+    .btn-voltar {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 1rem;
+      background: #6c757d;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-voltar:hover {
+      background: #5a6268;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .pendente-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn-group {
+        justify-content: stretch;
+      }
+
+      .btn-aprovar,
+      .btn-editar {
+        justify-content: center;
+      }
+
+      .escala-pendente {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+
   <script type="module">
     import { db, auth } from './firebase-config.js';
-    import { 
-      collection, 
-      getDocs, 
-      doc, 
-      updateDoc, 
-      deleteDoc, 
-      addDoc, 
-      query, 
+    import {
+      collection,
+      getDocs,
+      doc,
+      updateDoc,
+      deleteDoc,
+      addDoc,
+      query,
       where,
-      getDoc 
+      getDoc
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     let todasMusicas = [];
-    let escalasAprovadas = []; // ← NOVO: Cache das aprovadas
+    let escalasAprovadas = [];
 
     onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "hupcontato@gmail.com") {
@@ -33,12 +228,9 @@
     async function carregarDados() {
       const musSnap = await getDocs(collection(db, "musicas"));
       todasMusicas = musSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      
-      // ← NOVO: Carrega escalas já aprovadas para evitar duplicatas
       await carregarEscalasAprovadas();
     }
 
-    // ← NOVO: Carrega escalas aprovadas para proteção
     async function carregarEscalasAprovadas() {
       try {
         const aprovadasSnap = await getDocs(collection(db, "escalasCulto"));
@@ -59,7 +251,7 @@
 
         if (snapshot.empty) {
           container.innerHTML = `
-            <div style="text-align:center; padding:60px; color:#999;">
+            <div style="text-align:center; padding:60px; color:#6c757d;">
               <h3>🎉 Nenhuma escala pendente!</h3>
               <p>O sistema gera automaticamente 14 dias antes dos cultos fixos.</p>
             </div>
@@ -67,11 +259,9 @@
           return;
         }
 
-        // ← NOVO: Filtra escalas que NÃO foram aprovadas
         const pendentesValidas = [];
         snapshot.forEach(docSnap => {
           const escala = docSnap.data();
-          // Só mostra se NÃO existe aprovada para mesma data
           if (!escalasAprovadas.includes(escala.data)) {
             pendentesValidas.push({ id: docSnap.id, ...escala });
           }
@@ -79,7 +269,7 @@
 
         if (pendentesValidas.length === 0) {
           container.innerHTML = `
-            <div style="text-align:center; padding:60px; color:#999;">
+            <div style="text-align:center; padding:60px; color:#6c757d;">
               <h3>🎉 Todas as escalas foram aprovadas!</h3>
               <p>Verifique o <a href="index.html">calendário principal</a>.</p>
             </div>
@@ -97,9 +287,9 @@
           card.innerHTML = `
             <div class="pendente-header">
               <h3>${dataFormatada} - ${escala.tipoCulto}</h3>
-              <div>
-                <button onclick="aprovarEscala('${id}')" class="btn-aprovar">✅ APROVAR</button>
-                <button onclick="editarEscala('${id}')" class="btn-editar">✏️ EDITAR</button>
+              <div class="btn-group">
+                <button onclick="aprovarEscala('${id}')" class="btn-aprovar">APROVAR</button>
+                <button onclick="editarEscala('${id}')" class="btn-editar">EDITAR</button>
               </div>
             </div>
             <div class="musicas-preview">
@@ -123,12 +313,12 @@
         try {
           const escalaRef = doc(db, "escalasPendentes", id);
           const escalaSnap = await getDoc(escalaRef);
-          
+
           if (!escalaSnap.exists()) {
             alert('Escala não encontrada!');
             return;
           }
-          
+
           const escalaData = escalaSnap.data();
           const escalaPublica = {
             ...escalaData,
@@ -136,13 +326,12 @@
             aprovadaEm: new Date().toISOString(),
             aprovadaPor: auth.currentUser?.email || "admin"
           };
-          
+
           await addDoc(collection(db, "escalasCulto"), escalaPublica);
           await deleteDoc(escalaRef);
-          
-          // ← NOVO: Atualiza cache das aprovadas
+
           escalasAprovadas.push(escalaData.data);
-          
+
           alert('✅ Escala APROVADA e publicada!');
           carregarEscalasPendentes();
         } catch (e) {
@@ -152,6 +341,7 @@
     };
 
     window.editarEscala = function (id) {
+      console.log("🔗 Editando escala ID:", id); // DEBUG
       window.location.href = `editar-escala.html?id=${id}&pendente=true`;
     };
 
@@ -166,12 +356,11 @@
         let proximaDataCulto = new Date(hoje);
         const diasAteCulto = (culto.diaSemana - hoje.getDay() + 7) % 7;
         proximaDataCulto.setDate(hoje.getDate() + diasAteCulto);
-        
+
         if (proximaDataCulto <= hoje) {
           proximaDataCulto.setDate(proximaDataCulto.getDate() + 7);
         }
 
-        // ← NOVO: NÃO gera se já existe aprovada para essa data
         const dataCultoStr = proximaDataCulto.toISOString().split('T')[0];
         if (escalasAprovadas.includes(dataCultoStr)) {
           console.log("🚫 Escala já aprovada para", dataCultoStr);
@@ -207,7 +396,7 @@
       const musicasSelecionadas = candidatas.slice(0, culto.numMusicas);
       const membrosSnap = await getDocs(collection(db, "membrosEquipe"));
       const todosMembros = membrosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const equipe = todosMembros.slice(0, 6);
+      const equipe = todosMembros.slice(0, 12);
 
       const novaEscala = {
         data: dataCulto.toISOString().split('T')[0],
@@ -236,7 +425,7 @@
 
 <body>
   <div class="container">
-    <h1>⏳ Escalas Pendentes</h1>
+    <h1>Escalas Pendentes</h1>
     <p class="help-text">Escalas geradas automaticamente 14 dias antes. Aprove ou edite!</p>
 
     <div id="pendentesContainer" class="pendentes-grid"></div>

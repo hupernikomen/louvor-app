@@ -51,8 +51,8 @@
         if (escalasAprovadas.length === 0) {
           feed.innerHTML = `
             <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala aprovada encontrada</h2>
-              <p style="margin-top:10px;">As escalas aprovadas aparecerão aqui.</p>
+              <h2>Nenhuma escala postada</h2>
+              <p style="margin-top:10px;">As escalas criadas aparecerão aqui.</p>
             </div>`;
           return;
         }
@@ -134,7 +134,7 @@
         if (!encontrouEscala) {
           feed.innerHTML = `
             <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala futura aprovada</h2>
+              <h2>Nenhuma escala futura</h2>
               <p style="margin-top:10px;">As próximas escalas aparecerão aqui.</p>
             </div>`;
         }
@@ -166,7 +166,6 @@
     .header {
       position: sticky;
       top: 0;
-      background: white;
       padding: 14px 22px;
       display: flex;
       justify-content: space-between;
@@ -176,9 +175,9 @@
     }
 
     .header p {
-      font-size: 1.20rem;
-      font-weight: 600;
-      color: #2c3e50;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #4c545c;
       margin-left: 32px;
     }
 
@@ -300,8 +299,6 @@
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
       <div id="menuLogado" style="display:none; gap:10px; flex-wrap:wrap;">
-        <!-- <a href="escalas-pendentes.html" class="btn-login">⏳ Pendentes</a>
-        <a href="cultos-fixos.html" class="btn-login">📅 Fixos</a> -->
         <a href="menu.html" class="btn-login">Menu</a>
       </div>
     </div>

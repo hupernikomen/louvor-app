@@ -102,11 +102,11 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
 </head>
 <body>
   <div class="container">
-    <h1>📅 Cultos Fixos Semanais</h1>
+    <h1>Cultos</h1>
     <p class="help-text">Cadastre os cultos regulares. O sistema gerará escalas automaticamente 14 dias antes!</p>
 
     <div class="card">
-      <h2>Novo Culto Fixo</h2>
+      <h2>Novo Culto</h2>
       <form id="formCulto">
         <label>Nome do Culto *</label>
         <input type="text" id="nomeCulto" placeholder="Ex: EBD, Louvor e Pregação" required>
@@ -126,6 +126,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
         <label>Número de Músicas *</label>
         <select id="numMusicas" required>
           <option value="">Selecione...</option>
+          <option value="2">2 músicas</option>
           <option value="3">3 músicas</option>
           <option value="4">4 músicas</option>
           <option value="5">5 músicas</option>
@@ -138,7 +139,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
     </div>
 
     <div class="card">
-      <h2>🤖 Cultos Fixos Cadastrados</h2>
+      <h2>Cultos Cadastrados</h2>
       <table id="tabelaCultos">
         <thead>
           <tr>

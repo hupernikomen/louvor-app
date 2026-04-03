@@ -73,7 +73,7 @@
               <option value="">Selecione...</option>
               ${todasMusicas.map(mus => `
                 <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
-                  ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''} - ${mus.nivelAnimacao}
+                  ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''} 
                 </option>
               `).join('')}
             </select>

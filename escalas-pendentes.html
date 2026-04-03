@@ -258,13 +258,19 @@
           return;
         }
 
+        // ✅ ORDENAR POR DATA (mais próximo primeiro)
         const pendentesValidas = [];
         snapshot.forEach(docSnap => {
           const escala = docSnap.data();
           if (!escalasAprovadas.includes(escala.data)) {
+            // Converte data para Date object para ordenação
+            escala.dataObj = new Date(escala.data + 'T12:00:00');
             pendentesValidas.push({ id: docSnap.id, ...escala });
           }
         });
+
+        // Ordena do mais próximo (data menor) para o mais distante
+        pendentesValidas.sort((a, b) => a.dataObj - b.dataObj);
 
         if (pendentesValidas.length === 0) {
           container.innerHTML = `
@@ -302,6 +308,8 @@
           `;
           container.appendChild(card);
         });
+
+        console.log(`📅 ${pendentesValidas.length} escalas pendentes ordenadas por data (próxima primeiro)`);
       } catch (e) {
         container.innerHTML = '<div class="error">Erro ao carregar escalas pendentes.</div>';
       }
@@ -340,7 +348,7 @@
     };
 
     window.editarEscala = function (id) {
-      console.log("🔗 Editando escala ID:", id); // DEBUG
+      console.log("🔗 Editando escala ID:", id);
       window.location.href = `editar-escala.html?id=${id}&pendente=true`;
     };
 

@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Escalas de Louvor</title>
-  <link rel="stylesheet" href="style.css">
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -36,14 +35,13 @@
       feed.innerHTML = '<p class="loading">Carregando escalas aprovadas...</p>';
 
       try {
-        // ✅ SEM where() - filtra no client (sem necessidade de índice)
         const q = query(escalasRef, orderBy("data"));
         const snapshot = await getDocs(q);
 
         const escalasAprovadas = [];
         snapshot.forEach(doc => {
           const e = doc.data();
-          if (e.status === "aprovada") {  // ← FILTRA AQUI
+          if (e.status === "aprovada") {
             escalasAprovadas.push({ id: doc.id, ...e });
           }
         });
@@ -56,6 +54,13 @@
             </div>`;
           return;
         }
+
+        // ✅ ORDENAR POR DATA (mais próximo primeiro)
+        escalasAprovadas.sort((a, b) => {
+          const dataA = new Date(a.data + 'T12:00:00');
+          const dataB = new Date(b.data + 'T12:00:00');
+          return dataA - dataB;
+        });
 
         feed.innerHTML = '';
 
@@ -139,6 +144,11 @@
             </div>`;
         }
 
+        console.log(`📅 ${escalasAprovadas.filter(e => {
+          const dataEscala = new Date(e.data + 'T12:00:00');
+          return dataEscala >= hoje;
+        }).length} escalas futuras ordenadas (próxima primeiro)`);
+
       } catch (error) {
         console.error(error);
         feed.innerHTML = '<p style="color:red; text-align:center; padding:40px;">Erro ao carregar as escalas.</p>';
@@ -152,9 +162,11 @@
   </script>
 
   <style>
-    /* Seu CSS original aqui... */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
- * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;

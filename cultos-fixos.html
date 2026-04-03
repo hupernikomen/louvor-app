@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- ✅ IONICONS -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
@@ -29,56 +30,12 @@
     .container {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 1rem;
     }
 
-    /* HEADER */
-    .header {
-      position: sticky;
-      background: white;
-      padding: 16px 20px;
-      top: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-      z-index: 100;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-    }
 
-    header h1 {
-      text-align: center;
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: #2c3e50;
-      margin: 0;
-    }
 
-    /* BOTÃO VOLTAR */
-    .btn-voltar {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.75rem;
-      background: linear-gradient(135deg, #0f74cd, #1e88e5);
-      color: white !important;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(15, 116, 205, 0.3);
-      font-size: 1.2rem;
-      width: 52px;
-      height: 52px;
-    }
 
-    .btn-voltar:hover {
-      background: linear-gradient(135deg, #0d5fa8, #1976d2);
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 6px 20px rgba(15, 116, 205, 0.4);
-    }
+
 
     .btn-voltar ion-icon {
       font-size: 1.4rem;
@@ -242,18 +199,9 @@
     /* MOBILE */
     @media (max-width: 768px) {
       .container {
-        padding: 1rem 0.5rem;
+        padding: 0.5rem;
       }
 
-      .header {
-        padding: 12px 16px;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      header h1 {
-        font-size: 1.5rem;
-      }
 
       .card {
         padding: 1.5rem;
@@ -268,6 +216,40 @@
       td {
         padding: 12px 8px;
       }
+    }
+
+    .header {
+      position: sticky;
+      background: white;
+      padding: 16px 20px;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      z-index: 100;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .btn-voltar {
+      padding: 12px;
+      background: linear-gradient(135deg, #0f74cd, #1e88e5);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-voltar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(15, 116, 205, 0.4);
     }
   </style>
 
@@ -289,9 +271,9 @@
       const tbody = document.querySelector('#tabelaCultos tbody');
       tbody.innerHTML = '';
       const snapshot = await getDocs(cultosRef);
-      
+
       const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-      
+
       snapshot.forEach(docSnap => {
         const culto = docSnap.data();
         const id = docSnap.id;
@@ -310,7 +292,7 @@
       });
     }
 
-    window.editarCulto = async function(id) {
+    window.editarCulto = async function (id) {
       const snapshot = await getDocs(cultosRef);
       const cultoDoc = snapshot.docs.find(d => d.id === id);
       const culto = cultoDoc.data();
@@ -318,14 +300,14 @@
       document.getElementById('nomeCulto').value = culto.nome;
       document.getElementById('diaSemana').value = culto.diaSemana;
       document.getElementById('numMusicas').value = culto.numMusicas;
-      
+
       cultoEditandoId = id;
       document.querySelector('button[type="submit"]').textContent = 'Atualizar';
-      
+
       document.querySelector('.card:first-of-type').scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.excluirCulto = async function(id) {
+    window.excluirCulto = async function (id) {
       if (confirm('Excluir este culto fixo?')) {
         try {
           await deleteDoc(doc(db, "cultosFixos", id));
@@ -370,17 +352,12 @@
     window.onload = carregarCultos;
   </script>
 </head>
+
 <body>
+
   <div class="container">
-    <header class="header">
-      <div>
-<button onclick="history.back()" class="btn-voltar" title="Voltar">
-  <ion-icon name="arrow-back-outline"></ion-icon>
-</button>
-      </div>
-      <h1>Cultos Fixos</h1>
-      <div></div>
-    </header>
+    <div id="header-placeholder"></div>
+
 
     <p class="help-text">
       Cadastre os cultos regulares. O sistema gerará escalas automaticamente 31 dias antes!
@@ -434,5 +411,14 @@
       </table>
     </div>
   </div>
+
+  <!-- 3. CARREGA HEADER -->
+  <script src="header.js"></script>
+  <script>
+    carregarHeader('Cultos');
+  </script>
 </body>
+
+
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +27,7 @@
       }
     });
 
-    window.fazerLoginGoogle = async function() {
+    window.fazerLoginGoogle = async function () {
       try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
@@ -47,7 +48,7 @@
       }
     };
 
-    window.fazerLogout = async function() {
+    window.fazerLogout = async function () {
       if (confirm("Deseja realmente sair?")) {
         await signOut(auth);
         alert("Logout realizado.");
@@ -66,19 +67,22 @@
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
     }
+
     .login-card {
       background: white;
       padding: 60px 40px;
       border-radius: 16px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
       text-align: center;
       max-width: 460px;
       width: 90%;
     }
+
     .login-card h1 {
       margin-bottom: 8px;
       color: #2c3e50;
     }
+
     .btn-google {
       background-color: #fff;
       color: #444;
@@ -95,16 +99,19 @@
       width: 100%;
       margin-bottom: 20px;
     }
+
     .btn-google:hover {
       background-color: #f8f9fa;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
       transform: translateY(-3px);
     }
+
     .menu-logado {
       margin-top: 30px;
       padding-top: 25px;
       border-top: 1px solid #eee;
     }
+
     .menu-logado a {
       display: block;
       background: #3498db;
@@ -115,11 +122,13 @@
       text-decoration: none;
       font-weight: 600;
     }
+
     .menu-logado a:hover {
       background: #2980b9;
     }
   </style>
 </head>
+
 <body>
   <div class="login-card">
     <h1>Escala de Louvor</h1>
@@ -127,8 +136,8 @@
 
     <!-- Botão de Login -->
     <button id="btn-login" onclick="fazerLoginGoogle()" class="btn-google">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
-           width="26" height="26" alt="Google">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="26" height="26"
+        alt="Google">
       Entrar com Google
     </button>
 
@@ -143,10 +152,12 @@
         <a href="gerar-escala.html">📅 Gerar Nova Escala</a>
         <a href="cadastro-musicas.html">🎵 Cadastrar Músicas</a>
         <a href="cadastro-membros.html">👥 Cadastrar Equipe</a>
+        <a href="escalas-pendentes.html">⏳ Escalas Pendentes</a>
+        <a href="cultos-fixos.html">📅 Cultos Fixos</a>
       </div>
 
-      <button onclick="fazerLogout()" 
-              style="margin-top:25px; background:none; border:none; color:#e74c3c; cursor:pointer;">
+      <button onclick="fazerLogout()"
+        style="margin-top:25px; background:none; border:none; color:#e74c3c; cursor:pointer;">
         Sair da conta
       </button>
     </div>
@@ -154,4 +165,5 @@
 
   </div>
 </body>
+
 </html>

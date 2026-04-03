@@ -1,17 +1,280 @@
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+  
+  <!-- ✅ IONICONS -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
   <title>Cultos Fixos - Escala de Louvor</title>
+
+  <style>
+    /* ===== MESMO ESTILO DA TELA DE MÚSICAS ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* HEADER */
+    .header {
+      position: sticky;
+      background: white;
+      padding: 16px 20px;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      z-index: 100;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+
+    /* BOTÃO VOLTAR */
+    .btn-voltar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: linear-gradient(135deg, #0f74cd, #1e88e5);
+      color: white !important;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(15, 116, 205, 0.3);
+      font-size: 1.2rem;
+      width: 52px;
+      height: 52px;
+    }
+
+    .btn-voltar:hover {
+      background: linear-gradient(135deg, #0d5fa8, #1976d2);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(15, 116, 205, 0.4);
+    }
+
+    .btn-voltar ion-icon {
+      font-size: 1.4rem;
+    }
+
+    .help-text {
+      text-align: center;
+      background: #e8f4f8;
+      padding: 1.25rem;
+      border-radius: 12px;
+      border-left: 4px solid #3498db;
+      margin-bottom: 2rem;
+      color: #2c3e50;
+      font-size: 1.05rem;
+    }
+
+    /* CARDS */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border: 1px solid #f0f0f0;
+    }
+
+    .card h2 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 1.4rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #3498db;
+    }
+
+    /* FORMULÁRIO */
+    form {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    label {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+      display: block;
+      font-size: 0.95rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      background: #fafbfc;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+      background: white;
+    }
+
+    button[type="submit"] {
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      color: white;
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    button[type="submit"]:hover {
+      background: linear-gradient(135deg, #219653, #27ae60);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+    }
+
+    /* TABELA ORIGINAL */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    th,
+    td {
+      padding: 16px 12px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    th {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+    }
+
+    tr:hover {
+      background: #f8f9fa;
+    }
+
+    /* BOTÕES TABELA ORIGINAIS */
+    button[onclick*="editar"] {
+      background: #f39c12 !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border: none !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      font-size: 0.85rem !important;
+      font-weight: 600 !important;
+      margin-right: 8px;
+      transition: all 0.2s ease;
+    }
+
+    button[onclick*="editar"]:hover {
+      background: #e67e22 !important;
+      transform: translateY(-1px);
+    }
+
+    button[onclick*="excluir"] {
+      background: #e74c3c !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border: none !important;
+      border-radius: 8px !important;
+      cursor: pointer !important;
+      font-size: 0.85rem !important;
+      font-weight: 600 !important;
+      transition: all 0.2s ease;
+    }
+
+    button[onclick*="excluir"]:hover {
+      background: #c0392b !important;
+      transform: translateY(-1px);
+    }
+
+    /* MOBILE */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem 0.5rem;
+      }
+
+      .header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        padding: 12px 8px;
+      }
+    }
+  </style>
+
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     const cultosRef = collection(db, "cultosFixos");
     let cultoEditandoId = null;
@@ -27,19 +290,20 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
       tbody.innerHTML = '';
       const snapshot = await getDocs(cultosRef);
       
+      const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      
       snapshot.forEach(docSnap => {
         const culto = docSnap.data();
         const id = docSnap.id;
-        const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${dias[culto.diaSemana]}</td>
-          <td>${culto.nome}</td>
-          <td style="text-align:center;">${culto.numMusicas}</td>
+          <td style="font-weight: 600;">${dias[culto.diaSemana]}</td>
+          <td style="font-weight: 600; color: #2c3e50;">${culto.nome}</td>
+          <td style="text-align:center; font-weight: 700; color: #27ae60;">${culto.numMusicas}</td>
           <td>
-            <button onclick="editarCulto('${id}')" class="btn-editar">Editar</button>
-            <button onclick="excluirCulto('${id}')" class="btn-excluir">Excluir</button>
+            <button onclick="editarCulto('${id}')" style="background:#f39c12; color:white; padding:8px 16px;">Editar</button>
+            <button onclick="excluirCulto('${id}')" style="background:#e74c3c; color:white; padding:8px 16px;">Excluir</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -57,13 +321,19 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
       
       cultoEditandoId = id;
       document.querySelector('button[type="submit"]').textContent = 'Atualizar';
+      
+      document.querySelector('.card:first-of-type').scrollIntoView({ behavior: 'smooth' });
     };
 
     window.excluirCulto = async function(id) {
       if (confirm('Excluir este culto fixo?')) {
-        await deleteDoc(doc(db, "cultosFixos", id));
-        carregarCultos();
-        alert('Culto fixo excluído!');
+        try {
+          await deleteDoc(doc(db, "cultosFixos", id));
+          carregarCultos();
+          alert('Culto fixo excluído!');
+        } catch (e) {
+          alert('Erro: ' + e.message);
+        }
       }
     };
 
@@ -102,11 +372,22 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
 </head>
 <body>
   <div class="container">
-    <h1>Cultos</h1>
-    <p class="help-text">Cadastre os cultos regulares. O sistema gerará escalas automaticamente 14 dias antes!</p>
+    <header class="header">
+      <div>
+        <a href="index.html" class="btn-voltar" title="Voltar">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </a>
+      </div>
+      <h1>Cultos Fixos</h1>
+      <div></div>
+    </header>
+
+    <p class="help-text">
+      Cadastre os cultos regulares. O sistema gerará escalas automaticamente 31 dias antes!
+    </p>
 
     <div class="card">
-      <h2>Novo Culto</h2>
+      <h2>Novo Culto Fixo</h2>
       <form id="formCulto">
         <label>Nome do Culto *</label>
         <input type="text" id="nomeCulto" placeholder="Ex: EBD, Louvor e Pregação" required>
@@ -152,8 +433,6 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/f
         <tbody></tbody>
       </table>
     </div>
-
-    <a href="login.html" class="btn-voltar">← Voltar</a>
   </div>
 </body>
 </html>

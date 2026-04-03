@@ -80,7 +80,7 @@
 
           card.innerHTML = `
             <div class="card-header">
-              <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
+              <span class="tipo-culto">${e.tipoCulto.replace('_e_', ' e ').toUpperCase()}</span>
               <div>
                 <span class="data">${dataFormatada}</span>
               </div>
@@ -204,11 +204,11 @@
     }
 
     .tipo-culto {
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 6px 12px;
+      background: #3498db;
+      color: #fff;
+      padding: 4px 10px;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: 0.80rem;
       font-weight: 600;
     }
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,7 +45,7 @@
     }
 
     // ====================== NOVA INTELIGÊNCIA ======================
-function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
+    function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
       const tipoLower = tipoCulto.toLowerCase();
 
       let candidatas = musicasDisponiveis.map(m => {
@@ -52,7 +53,7 @@ function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
 
         if (m.slotPreferido) {
           if (tipoLower.includes(m.slotPreferido)) score += 120;
-          else if (["ceia","oferta","batismo"].includes(m.slotPreferido)) score -= 30;
+          else if (["ceia", "oferta", "batismo"].includes(m.slotPreferido)) score -= 30;
         }
 
         if (m.ultimaUso) {
@@ -98,7 +99,7 @@ function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
       return selecionadas.slice(0, 5);
     }
 
-    window.gerarEscala = async function() {
+    window.gerarEscala = async function () {
       const data = document.getElementById('data').value;
       const tipoCulto = document.getElementById('tipoCulto').value;
       const detalhesCulto = document.getElementById('detalhesCulto').value.trim();
@@ -144,7 +145,7 @@ function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
 
       escalaAtual.musicas.forEach((m, i) => {
         html += `<tr>
-          <td><strong>${i+1}ª</strong></td>
+          <td><strong>${i + 1}ª</strong></td>
           <td>${m.titulo}</td>
           <td>${m.tom || '-'}</td>
           <td>${m.nivelAnimacao}</td>
@@ -157,7 +158,7 @@ function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
       document.getElementById('resultado').style.display = 'block';
     };
 
-    window.confirmarEscala = async function() {
+    window.confirmarEscala = async function () {
       if (!escalaAtual) return;
 
       try {
@@ -182,73 +183,111 @@ function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
       }
     };
 
-function debounce(func, delay) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), delay);
-  };
-}
+    function debounce(func, delay) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
 
-function gerarPreviewAoVivo() {
-  const data = document.getElementById('data').value;
-  const tipoCulto = document.getElementById('tipoCulto').value;
-  const detalhesCulto = document.getElementById('detalhesCulto').value.trim();
-  const checks = document.querySelectorAll('.membroCheck:checked');
-  
-  if (!data || !tipoCulto || checks.length === 0) return;
+    function gerarPreviewAoVivo() {
+      const data = document.getElementById('data').value;
+      const tipoCulto = document.getElementById('tipoCulto').value;
+      const detalhesCulto = document.getElementById('detalhesCulto').value.trim();
+      const checks = document.querySelectorAll('.membroCheck:checked');
 
-  const equipeSelecionada = Array.from(checks).map(check => {
-    const m = membrosDisponiveis.find(mem => mem.id === check.value);
-    return { nome: m.nome, funcao: m.funcao };
-  });
+      if (!data || !tipoCulto || checks.length === 0) return;
 
-  const tipoCompleto = tipoCulto + ' ' + detalhesCulto;
-  const musicasSugestao = gerarSugestaoMusicas(tipoCompleto);
+      const equipeSelecionada = Array.from(checks).map(check => {
+        const m = membrosDisponiveis.find(mem => mem.id === check.value);
+        return { nome: m.nome, funcao: m.funcao };
+      });
 
-  let html = `<h3>${new Date(data).toLocaleDateString('pt-BR')} — ${tipoCulto}</h3>`;
-  if (detalhesCulto) html += `<p><strong>Detalhes:</strong> ${detalhesCulto}</p>`;
-  html += `<p><strong>Equipe:</strong> ${equipeSelecionada.map(e => e.nome).join(', ')}</p>`;
-  html += '<table><thead><tr><th>Posição</th><th>Música</th><th>Tom</th><th>Nível</th><th>Slot</th></tr></thead><tbody>';
+      const tipoCompleto = tipoCulto + ' ' + detalhesCulto;
+      const musicasSugestao = gerarSugestaoMusicas(tipoCompleto);
 
-  musicasSugestao.forEach((m, i) => {
-    html += `<tr>
-      <td><strong>${i+1}ª</strong></td>
+      let html = `<h3>${new Date(data).toLocaleDateString('pt-BR')} — ${tipoCulto}</h3>`;
+      if (detalhesCulto) html += `<p><strong>Detalhes:</strong> ${detalhesCulto}</p>`;
+      html += `<p><strong>Equipe:</strong> ${equipeSelecionada.map(e => e.nome).join(', ')}</p>`;
+      html += '<table><thead><tr><th>Posição</th><th>Música</th><th>Tom</th><th>Nível</th><th>Slot</th></tr></thead><tbody>';
+
+      musicasSugestao.forEach((m, i) => {
+        html += `<tr>
+      <td><strong>${i + 1}ª</strong></td>
       <td>${m.titulo}</td>
       <td>${m.tom || '-'}</td>
       <td>${m.nivelAnimacao}</td>
       <td>${m.slot || '-'}</td>
     </tr>`;
-  });
-  html += '</tbody></table>';
+      });
+      html += '</tbody></table>';
 
-  document.getElementById('listaMusicas').innerHTML = html;
-  document.getElementById('resultado').style.display = 'block';
-}
+      document.getElementById('listaMusicas').innerHTML = html;
+      document.getElementById('resultado').style.display = 'block';
+    }
 
-window.onload = function() {
-  carregarDados();
-  
-  // Listeners para preview live
-  document.getElementById('data').onchange = gerarPreviewAoVivo;
-  document.getElementById('tipoCulto').onchange = gerarPreviewAoVivo;
-  document.querySelectorAll('.membroCheck').forEach(check => {
-    check.onchange = gerarPreviewAoVivo;
-  });
-  
-  const detalhesInput = document.getElementById('detalhesCulto');
-  detalhesInput.oninput = debounce(gerarPreviewAoVivo, 500);
-};
+    window.onload = function () {
+      carregarDados();
+
+      // Listeners para preview live
+      document.getElementById('data').onchange = gerarPreviewAoVivo;
+      document.getElementById('tipoCulto').onchange = gerarPreviewAoVivo;
+      document.querySelectorAll('.membroCheck').forEach(check => {
+        check.onchange = gerarPreviewAoVivo;
+      });
+
+      const detalhesInput = document.getElementById('detalhesCulto');
+      detalhesInput.oninput = debounce(gerarPreviewAoVivo, 500);
+    };
   </script>
 
 
   <style>
-    .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
-    .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-    input:checked + .slider { background-color: #3498db; }
-    input:checked + .slider:before { transform: translateX(24px); }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 28px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: #3498db;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(24px);
+    }
 
     .help-text {
       font-size: 0.9em;
@@ -264,18 +303,20 @@ window.onload = function() {
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>📅 Gerar Nova Escala</h1>
+    <h1>Gerar Nova Escala</h1>
 
     <div class="card">
       <h2>Dados do Culto</h2>
       <form id="formEscala">
-<label>Data do Culto</label>
+        <label>Data do Culto</label>
         <input type="date" id="data" required>
-        <p class="help-text">Escolha a data do culto futuro. A sugestão considera músicas "descansadas" desde última uso.</p>
+        <p class="help-text">Escolha a data do culto futuro. A sugestão considera músicas "descansadas" desde última
+          uso.</p>
 
-<label>Tipo de Culto</label>
+        <label>Tipo de Culto</label>
         <select id="tipoCulto" required>
           <option value="">Selecione...</option>
           <option value="EBD">EBD</option>
@@ -284,9 +325,11 @@ window.onload = function() {
           <option value="Eventos">Eventos</option>
           <option value="Culto Festivo">Culto Festivo</option>
         </select>
-        <p class="help-text">Escolha o tipo de culto. O algoritmo analisa palavras-chave (ex: \"Louvor\" prioriza músicas animadas, \"EBD\" prefere calmas). Músicas com slotPreferido compatível ganham +120 pontos no ranking!</p>
+        <p class="help-text">Escolha o tipo de culto. O algoritmo analisa palavras-chave (ex: \"Louvor\" prioriza
+          músicas animadas, \"EBD\" prefere calmas). Músicas com slotPreferido compatível ganham +120 pontos no ranking!
+        </p>
 
-<label>Nº de Louvores</label>
+        <label>Nº de Louvores</label>
         <select id="numLouvores" required>
           <option value="3">3 louvores</option>
           <option value="4">4 louvores</option>
@@ -295,21 +338,28 @@ window.onload = function() {
           <option value="7">7 louvores</option>
           <option value="8">8 louvores</option>
         </select>
-        <p class="help-text">Número de louvores na escala. O algoritmo adapta: oferta na 4ª (se ≥4), balanceia níveis calma/moderada/animada.</p>
+        <p class="help-text">Número de louvores na escala. O algoritmo adapta: oferta na 4ª (se ≥4), balanceia níveis
+          calma/moderada/animada.</p>
 
-<label>Detalhes do Culto (opcional)</label>
+        <label>Detalhes do Culto (opcional)</label>
         <textarea id="detalhesCulto" rows="2" placeholder="Ex: Tema da EBD, Pregador convidado, etc..."></textarea>
-        <p class="help-text">Informações extras: 'Batismo', 'Pregador João', 'Tema EBD: Salvação', 'Ceia'. Ajuda no contexto.</p>
+        <p class="help-text">Informações extras: 'Batismo', 'Pregador João', 'Tema EBD: Salvação', 'Ceia'. Ajuda no
+          contexto.</p>
 
-<label>Observações Gerais (opcional)</label>
+        <label>Observações Gerais (opcional)</label>
         <textarea id="observacoesEscala" rows="2"></textarea>
-        <p class="help-text">Notas para líder: 'Ensaio 18h', 'Ajustar tom 2ª música', 'Membro X viajou'. Fica salva na escala.</p>
+        <p class="help-text">Notas para líder: 'Ensaio 18h', 'Ajustar tom 2ª música', 'Membro X viajou'. Fica salva na
+          escala.</p>
 
-<h3 style="margin:25px 0 10px;">👥 Equipe</h3>
-        <div id="membrosContainer" style="max-height:380px; overflow-y:auto; border:1px solid #ddd; padding:12px; border-radius:8px; background:#f9f9f9;"></div>
-        <p class="help-text">Todos membros selecionados por padrão. Desmarque indisponíveis. Mínimo 1 membro necessário.</p>
+        <h3 style="margin:25px 0 10px;">👥 Equipe</h3>
+        <div id="membrosContainer"
+          style="max-height:380px; overflow-y:auto; border:1px solid #ddd; padding:12px; border-radius:8px; background:#f9f9f9;">
+        </div>
+        <p class="help-text">Todos membros selecionados por padrão. Desmarque indisponíveis. Mínimo 1 membro necessário.
+        </p>
 
-        <button type="button" onclick="gerarEscala()" style="margin-top:25px; width:100%; padding:16px; font-size:17px;">
+        <button type="button" onclick="gerarEscala()"
+          style="margin-top:25px; width:100%; padding:16px; font-size:17px;">
           🤖 Gerar Sugestão Inteligente
         </button>
       </form>
@@ -319,11 +369,14 @@ window.onload = function() {
       <h2>🎯 Escala Sugerida</h2>
       <div id="listaMusicas"></div>
       <br>
-      <button onclick="confirmarEscala()" style="background:#27ae60; color:white; padding:15px 30px;">✅ Confirmar e Salvar</button>
-      <button onclick="gerarPreviewAoVivo()" style="background:#3498db; color:white; padding:15px 30px; margin-left:10px;">🎲 Nova Sugestão</button>
+      <button onclick="confirmarEscala()" style="background:#27ae60; color:white; padding:15px 30px;">✅ Confirmar e
+        Salvar</button>
+      <button onclick="gerarPreviewAoVivo()"
+        style="background:#3498db; color:white; padding:15px 30px; margin-left:10px;">🎲 Nova Sugestão</button>
     </div>
 
     <a href="index.html" style="display:block; text-align:center; margin-top:40px;">← Voltar</a>
   </div>
 </body>
+
 </html>

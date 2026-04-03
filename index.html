@@ -15,21 +15,44 @@
 
     onAuthStateChanged(auth, (user) => {
       usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
+      atualizarMenu(user);
     });
+
+    function atualizarMenu(user) {
+      const btnLogin = document.getElementById('btnLogin');
+      const menuLogado = document.getElementById('menuLogado');
+      
+      if (usuarioLogado) {
+        btnLogin.style.display = 'none';
+        menuLogado.style.display = 'flex';
+      } else {
+        btnLogin.style.display = 'inline-block';
+        menuLogado.style.display = 'none';
+      }
+    }
 
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
-      feed.innerHTML = '<p style="text-align:center; padding:80px 20px; color:#888;">Carregando escalas recentes...</p>';
+      feed.innerHTML = '<p class="loading">Carregando escalas aprovadas...</p>';
 
       try {
-        const q = query(escalasRef, orderBy("criadoEm", "desc"));
+        // ✅ SEM where() - filtra no client (sem necessidade de índice)
+        const q = query(escalasRef, orderBy("data"));
         const snapshot = await getDocs(q);
 
-        if (snapshot.empty) {
+        const escalasAprovadas = [];
+        snapshot.forEach(doc => {
+          const e = doc.data();
+          if (e.status === "aprovada") {  // ← FILTRA AQUI
+            escalasAprovadas.push({ id: doc.id, ...e });
+          }
+        });
+
+        if (escalasAprovadas.length === 0) {
           feed.innerHTML = `
             <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala encontrada</h2>
-              <p style="margin-top:10px;">As escalas geradas aparecerão aqui.</p>
+              <h2>Nenhuma escala aprovada encontrada</h2>
+              <p style="margin-top:10px;">As escalas aprovadas aparecerão aqui.</p>
             </div>`;
           return;
         }
@@ -37,22 +60,20 @@
         feed.innerHTML = '';
 
         const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0); // Considera apenas a data (sem hora)
-
+        hoje.setHours(0, 0, 0, 0);
         let encontrouEscala = false;
 
-        snapshot.forEach(doc => {
-          const e = doc.data();
-          const escalaId = doc.id;
+        escalasAprovadas.forEach(doc => {
+          const e = doc;
+          const escalaId = e.id;
 
-          // ==================== REGRA: MOSTRAR APENAS DATAS FUTURAS ====================
           if (!e.data) return;
 
           const [ano, mes, dia] = e.data.split('-').map(Number);
           const dataEscala = new Date(ano, mes - 1, dia);
           dataEscala.setHours(0, 0, 0, 0);
 
-          // Se a data da escala for anterior a hoje → não mostra
+          // Só escalas futuras
           if (dataEscala < hoje) return;
 
           encontrouEscala = true;
@@ -62,12 +83,9 @@
 
           if (usuarioLogado) {
             card.style.cursor = 'pointer';
-            card.onclick = () => {
-              window.location.href = `editar-escala.html?id=${escalaId}`;
-            };
+            card.onclick = () => window.location.href = `editar-escala.html?id=${escalaId}`;
           }
 
-          // Formatação correta da data
           let dataFormatada = "Data inválida";
           if (e.data) {
             const dataCorreta = new Date(ano, mes - 1, dia);
@@ -80,7 +98,7 @@
 
           card.innerHTML = `
             <div class="card-header">
-              <span class="tipo-culto">${e.tipoCulto.replace('_', ' ').toUpperCase()}</span>
+              <span class="tipo-culto">${e.tipoCulto.replace('_e_', ' e ').toUpperCase()}</span>
               <div>
                 <span class="data">${dataFormatada}</span>
               </div>
@@ -113,11 +131,10 @@
           feed.appendChild(card);
         });
 
-        // Mensagem caso não haja escalas futuras
         if (!encontrouEscala) {
           feed.innerHTML = `
             <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala futura encontrada</h2>
+              <h2>Nenhuma escala futura aprovada</h2>
               <p style="margin-top:10px;">As próximas escalas aparecerão aqui.</p>
             </div>`;
         }
@@ -128,11 +145,16 @@
       }
     }
 
-    window.onload = carregarEscalas;
+    window.onload = () => {
+      carregarEscalas();
+      atualizarMenu();
+    };
   </script>
 
   <style>
+    /* Seu CSS original aqui... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
+ * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -204,11 +226,11 @@
     }
 
     .tipo-culto {
-      background: #e3f2fd;
-      color: #1565c0;
-      padding: 6px 12px;
+      background: #3498db;
+      color: #fff;
+      padding: 4px 10px;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: 0.80rem;
       font-weight: 600;
     }
 
@@ -275,7 +297,14 @@
 <body>
   <header class="header">
     <p>Escala de Louvor</p>
-    <a href="login.html" class="btn-login">Login</a>
+    <div>
+      <a href="login.html" class="btn-login" id="btnLogin">Login</a>
+      <div id="menuLogado" style="display:none; gap:10px; flex-wrap:wrap;">
+        <!-- <a href="escalas-pendentes.html" class="btn-login">⏳ Pendentes</a>
+        <a href="cultos-fixos.html" class="btn-login">📅 Fixos</a> -->
+        <a href="menu.html" class="btn-login">Menu</a>
+      </div>
+    </div>
   </header>
 
   <div class="container">

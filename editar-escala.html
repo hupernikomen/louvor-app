@@ -51,7 +51,10 @@
       const container = document.getElementById('musicasContainer');
       container.innerHTML = '';
 
-      for (let i = 0; i < 5; i++) {
+      // Usa o número correto de músicas baseado na escala
+      const numMusicas = escalaAtual.musicas ? escalaAtual.musicas.length : 5;
+
+      for (let i = 0; i < numMusicas; i++) {
         const musicaAtual = escalaAtual.musicas[i] || {};
 
         const div = document.createElement('div');
@@ -83,8 +86,15 @@
       await carregarTodasMusicas();
 
       try {
-        const docRef = doc(db, "escalasCulto", escalaId);
-        const docSnap = await getDoc(docRef);
+        // PRIMEIRO tenta em escalasPendentes (para edição de pendentes)
+        let docRef = doc(db, "escalasPendentes", escalaId);
+        let docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          // SE NÃO ACHAR, tenta em escalasCulto
+          docRef = doc(db, "escalasCulto", escalaId);
+          docSnap = await getDoc(docRef);
+        }
 
         if (!docSnap.exists()) {
           alert("Escala não encontrada.");
@@ -99,7 +109,17 @@
         document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
         document.getElementById('observacoes').value = escalaAtual.observacoes || '';
 
+        // Preenche equipe se existir
+        const equipeDiv = document.getElementById('equipePreview');
+        if (escalaAtual.equipe && escalaAtual.equipe.length > 0) {
+          equipeDiv.textContent = `Equipe: ${escalaAtual.equipe.map(e => e.nome).join(', ')}`;
+          equipeDiv.style.display = 'block';
+        }
+
         renderizarSelectsMusicas();
+
+        // Atualiza título da página
+        document.title = `Editar ${escalaAtual.tipoCulto} - ${new Date(escalaAtual.data).toLocaleDateString('pt-BR')}`;
 
       } catch (e) {
         console.error(e);
@@ -116,7 +136,7 @@
       for (let select of selects) {
         const musicaId = select.value;
         if (!musicaId) {
-          alert("Por favor, selecione uma música para todas as 5 posições.");
+          alert("Por favor, selecione uma música para todas as posições.");
           return;
         }
 
@@ -134,13 +154,8 @@
       let dataSalvar = null;
 
       if (dataInput) {
-        // Cria a data no fuso horário local do Brasil de forma segura
         const [ano, mes, dia] = dataInput.split('-').map(Number);
-        
-        // Criamos a data com horário 12:00 (meio-dia) para evitar problemas de fuso
         const dataLocal = new Date(ano, mes - 1, dia, 12, 0, 0);
-        
-        // Convertemos para string YYYY-MM-DD (formato que o Firestore entende bem)
         dataSalvar = dataLocal.toISOString().split('T')[0];
       }
 
@@ -148,15 +163,25 @@
         data: dataSalvar,
         tipoCulto: document.getElementById('tipoCulto').value,
         musicas: novasMusicas,
-        observacoes: document.getElementById('observacoes').value.trim()
+        observacoes: document.getElementById('observacoes').value.trim(),
+        equipe: escalaAtual.equipe || [], // Mantém a equipe original
+        status: escalaAtual.status || "pendente" // Mantém o status
       };
 
       try {
-        const docRef = doc(db, "escalasCulto", escalaId);
+        // PRIMEIRO tenta salvar em escalasPendentes
+        let docRef = doc(db, "escalasPendentes", escalaId);
+        let docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          // SE NÃO ACHAR, salva em escalasCulto
+          docRef = doc(db, "escalasCulto", escalaId);
+        }
+
         await updateDoc(docRef, dadosAtualizados);
         
         alert("✅ Escala atualizada com sucesso!");
-        window.location.href = "index.html";
+        window.location.href = "escalas-pendentes.html"; // Volta para pendentes
       } catch (e) {
         console.error(e);
         alert("Erro ao salvar alterações: " + e.message);
@@ -225,6 +250,17 @@
       margin-bottom: 20px;
     }
 
+    #equipePreview {
+      display: none;
+      background: #e8f5e8;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-weight: 500;
+      color: #27ae60;
+      border-left: 4px solid #27ae60;
+    }
+
     button {
       background: #27ae60;
       color: white;
@@ -244,12 +280,14 @@
       background: #95a5a6;
       margin-top: 10px;
     }
+
+    .btn-voltar:hover { background: #7f8c8d; }
   </style>
 </head>
 <body>
   <header class="header">
     <h1>Editar Escala</h1>
-    <a href="index.html" style="color:#3498db; text-decoration:none;">← Voltar</a>
+    <a href="escalas-pendentes.html" style="color:#3498db; text-decoration:none; font-weight:500;">← Voltar</a>
   </header>
 
   <div class="container">
@@ -267,6 +305,8 @@
           <option value="evento">Evento</option>
           <option value="especial">Culto Especial</option>
       </select>
+
+      <div id="equipePreview"></div>
 
       <label>Músicas do Culto</label>
       <div id="musicasContainer"></div>

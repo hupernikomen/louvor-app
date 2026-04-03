@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Escalas Pendentes - Aprovar</title>
+  <script type="module">
+    import { db, auth } from './firebase-config.js';
+    import { 
+      collection, 
+      getDocs, 
+      doc, 
+      updateDoc, 
+      deleteDoc, 
+      addDoc, 
+      query, 
+      where,
+      getDoc 
+    } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    let todasMusicas = [];
+    let escalasAprovadas = []; // ← NOVO: Cache das aprovadas
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user || user.email !== "hupcontato@gmail.com") {
+        window.location.href = "login.html";
+      }
+    });
+
+    async function carregarDados() {
+      const musSnap = await getDocs(collection(db, "musicas"));
+      todasMusicas = musSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // ← NOVO: Carrega escalas já aprovadas para evitar duplicatas
+      await carregarEscalasAprovadas();
+    }
+
+    // ← NOVO: Carrega escalas aprovadas para proteção
+    async function carregarEscalasAprovadas() {
+      try {
+        const aprovadasSnap = await getDocs(collection(db, "escalasCulto"));
+        escalasAprovadas = aprovadasSnap.docs.map(d => d.data().data);
+        console.log("✅ Escalas aprovadas carregadas:", escalasAprovadas.length);
+      } catch (e) {
+        console.error("Erro ao carregar aprovadas:", e);
+      }
+    }
+
+    async function carregarEscalasPendentes() {
+      const container = document.getElementById('pendentesContainer');
+      container.innerHTML = '<div class="loading">Carregando escalas pendentes...</div>';
+
+      try {
+        const pendentesRef = collection(db, "escalasPendentes");
+        const snapshot = await getDocs(pendentesRef);
+
+        if (snapshot.empty) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:60px; color:#999;">
+              <h3>🎉 Nenhuma escala pendente!</h3>
+              <p>O sistema gera automaticamente 14 dias antes dos cultos fixos.</p>
+            </div>
+          `;
+          return;
+        }
+
+        // ← NOVO: Filtra escalas que NÃO foram aprovadas
+        const pendentesValidas = [];
+        snapshot.forEach(docSnap => {
+          const escala = docSnap.data();
+          // Só mostra se NÃO existe aprovada para mesma data
+          if (!escalasAprovadas.includes(escala.data)) {
+            pendentesValidas.push({ id: docSnap.id, ...escala });
+          }
+        });
+
+        if (pendentesValidas.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:60px; color:#999;">
+              <h3>🎉 Todas as escalas foram aprovadas!</h3>
+              <p>Verifique o <a href="index.html">calendário principal</a>.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = '';
+        pendentesValidas.forEach(escala => {
+          const id = escala.id;
+          const dataFormatada = new Date(escala.data + 'T12:00:00').toLocaleDateString('pt-BR');
+
+          const card = document.createElement('div');
+          card.className = 'escala-pendente';
+          card.innerHTML = `
+            <div class="pendente-header">
+              <h3>${dataFormatada} - ${escala.tipoCulto}</h3>
+              <div>
+                <button onclick="aprovarEscala('${id}')" class="btn-aprovar">✅ APROVAR</button>
+                <button onclick="editarEscala('${id}')" class="btn-editar">✏️ EDITAR</button>
+              </div>
+            </div>
+            <div class="musicas-preview">
+              ${escala.musicas.map((m, i) => `
+                <div class="musica-item">${i + 1}ª - ${m.titulo} ${m.tom ? `(${m.tom})` : ''}</div>
+              `).join('')}
+            </div>
+            <div class="equipe-preview">
+              Equipe: ${escala.equipe.map(e => e.nome).join(', ')}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        container.innerHTML = '<div class="error">Erro ao carregar escalas pendentes.</div>';
+      }
+    }
+
+    window.aprovarEscala = async function (id) {
+      if (confirm('Aprovar esta escala?')) {
+        try {
+          const escalaRef = doc(db, "escalasPendentes", id);
+          const escalaSnap = await getDoc(escalaRef);
+          
+          if (!escalaSnap.exists()) {
+            alert('Escala não encontrada!');
+            return;
+          }
+          
+          const escalaData = escalaSnap.data();
+          const escalaPublica = {
+            ...escalaData,
+            status: "aprovada",
+            aprovadaEm: new Date().toISOString(),
+            aprovadaPor: auth.currentUser?.email || "admin"
+          };
+          
+          await addDoc(collection(db, "escalasCulto"), escalaPublica);
+          await deleteDoc(escalaRef);
+          
+          // ← NOVO: Atualiza cache das aprovadas
+          escalasAprovadas.push(escalaData.data);
+          
+          alert('✅ Escala APROVADA e publicada!');
+          carregarEscalasPendentes();
+        } catch (e) {
+          alert('Erro: ' + e.message);
+        }
+      }
+    };
+
+    window.editarEscala = function (id) {
+      window.location.href = `editar-escala.html?id=${id}&pendente=true`;
+    };
+
+    async function verificarGeracaoAutomatica() {
+      const cultosSnap = await getDocs(collection(db, "cultosFixos"));
+      const cultosFixos = cultosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      for (let culto of cultosFixos) {
+        let proximaDataCulto = new Date(hoje);
+        const diasAteCulto = (culto.diaSemana - hoje.getDay() + 7) % 7;
+        proximaDataCulto.setDate(hoje.getDate() + diasAteCulto);
+        
+        if (proximaDataCulto <= hoje) {
+          proximaDataCulto.setDate(proximaDataCulto.getDate() + 7);
+        }
+
+        // ← NOVO: NÃO gera se já existe aprovada para essa data
+        const dataCultoStr = proximaDataCulto.toISOString().split('T')[0];
+        if (escalasAprovadas.includes(dataCultoStr)) {
+          console.log("🚫 Escala já aprovada para", dataCultoStr);
+          continue;
+        }
+
+        const dataGeracao = new Date(proximaDataCulto);
+        dataGeracao.setDate(proximaDataCulto.getDate() - 14);
+
+        if (dataGeracao <= hoje && proximaDataCulto > hoje) {
+          const q = query(collection(db, "escalasPendentes"), where("data", "==", dataCultoStr));
+          const existing = await getDocs(q);
+
+          if (existing.empty) {
+            console.log("✅ Gerando escala automática para", dataCultoStr);
+            await gerarEscalaAutomatica(culto, proximaDataCulto);
+          }
+        }
+      }
+    }
+
+    async function gerarEscalaAutomatica(culto, dataCulto) {
+      let candidatas = todasMusicas.map(m => {
+        let score = (m.prioridade || 5) * 12;
+        if (m.slotPreferido && culto.nome.toLowerCase().includes(m.slotPreferido)) score += 120;
+        if (m.ultimaUso) {
+          const dias = Math.floor((Date.now() - new Date(m.ultimaUso)) / 86400000);
+          score += Math.min(dias * 6, 130);
+        }
+        return { ...m, score };
+      }).sort((a, b) => b.score - a.score);
+
+      const musicasSelecionadas = candidatas.slice(0, culto.numMusicas);
+      const membrosSnap = await getDocs(collection(db, "membrosEquipe"));
+      const todosMembros = membrosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const equipe = todosMembros.slice(0, 6);
+
+      const novaEscala = {
+        data: dataCulto.toISOString().split('T')[0],
+        tipoCulto: culto.nome,
+        musicas: musicasSelecionadas.map(m => ({
+          titulo: m.titulo,
+          tom: m.tom,
+          nivelAnimacao: m.nivelAnimacao
+        })),
+        equipe: equipe.map(m => ({ nome: m.nome, funcao: m.funcao })),
+        status: "pendente",
+        criadoEm: new Date().toISOString()
+      };
+
+      await addDoc(collection(db, "escalasPendentes"), novaEscala);
+      console.log("🎵 Escala gerada para:", novaEscala.data);
+    }
+
+    window.onload = async function () {
+      await carregarDados();
+      await verificarGeracaoAutomatica();
+      carregarEscalasPendentes();
+    };
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>⏳ Escalas Pendentes</h1>
+    <p class="help-text">Escalas geradas automaticamente 14 dias antes. Aprove ou edite!</p>
+
+    <div id="pendentesContainer" class="pendentes-grid"></div>
+
+    <div style="text-align:center; margin-top:30px;">
+      <a href="login.html" class="btn-voltar">← Voltar</a>
+    </div>
+  </div>
+</body>
+
+</html>

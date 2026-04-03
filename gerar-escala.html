@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,71 +14,56 @@
     let membrosDisponiveis = [];
     let escalaAtual = null;
 
-    // ====================== CARREGAR DADOS ======================
     async function carregarDados() {
-      const musRef = collection(db, "musicas");
-      const musSnap = await getDocs(musRef);
+      const musSnap = await getDocs(collection(db, "musicas"));
       musicasDisponiveis = musSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      const memRef = collection(db, "membrosEquipe");
-      const memSnap = await getDocs(memRef);
+      const memSnap = await getDocs(collection(db, "membrosEquipe"));
       membrosDisponiveis = memSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       renderizarMembros();
     }
 
-    // ====================== RENDERIZAR MEMBROS COM TOGGLE ======================
     function renderizarMembros() {
       const container = document.getElementById('membrosContainer');
       container.innerHTML = '';
 
       membrosDisponiveis.forEach(membro => {
         const div = document.createElement('div');
-        div.style.margin = '12px 0';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.justifyContent = 'space-between';
+        div.style.margin = '10px 0';
         div.innerHTML = `
-          <span style="font-size:16px;">
-            ${membro.nome} 
-            <small style="color:#666;">(${membro.funcao})</small>
-          </span>
-          
-          <label class="switch">
-            <input type="checkbox" value="${membro.id}" class="membroCheck" checked>
-            <span class="slider round"></span>
-          </label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <label class="switch">
+              <input type="checkbox" value="${membro.id}" class="membroCheck" checked>
+              <span class="slider"></span>
+            </label>
+            <span style="font-size:16px;">${membro.nome} <small style="color:#666;">(${membro.funcao})</small></span>
+          </div>
         `;
         container.appendChild(div);
       });
     }
 
-    // ====================== LÓGICA INTELIGENTE DE ESCOLHA ======================
-    function gerarSugestaoMusicas(tipoCulto) {
+    // ====================== NOVA INTELIGÊNCIA ======================
+    function gerarSugestaoMusicas(tipoCulto, numLouvores = 5) {
       const tipoLower = tipoCulto.toLowerCase();
 
       let candidatas = musicasDisponiveis.map(m => {
-        let score = 50;
+        let score = (m.prioridade || 5) * 12;
 
-        if (m.frequencia) score += m.frequencia * 1.4;
-
-        if (m.slot) {
-          const slotLower = m.slot.toLowerCase();
-          if (tipoLower.includes(slotLower)) score += 130;
-          else if (["ceia", "oferta", "batismo"].includes(slotLower)) score -= 45;
-          else if (slotLower === "preludio") score += 35;
+        if (m.slotPreferido) {
+          if (tipoLower.includes(m.slotPreferido)) score += 120;
+          else if (["ceia", "oferta", "batismo"].includes(m.slotPreferido)) score -= 30;
         }
 
         if (m.ultimaUso) {
           const dias = Math.floor((Date.now() - new Date(m.ultimaUso)) / 86400000);
-          score += Math.min(dias * 5.5, 110);
+          score += Math.min(dias * 6, 130);
         } else {
-          score += 70;
+          score += 80;
         }
 
-        if (m.favorita === true) score += 55;
-        if (m.vezesUsada > 10) score -= 25;
-        if (m.nivelAnimacao > 4 && tipoLower.includes("ceia")) score -= 30;
+        if (m.vezesUsada > 12) score -= 25;
 
         return { ...m, score };
       });
@@ -87,61 +73,50 @@
       let selecionadas = [];
       let usadas = new Set();
 
-      // Posição 4 - Oferta
-      let pos4 = candidatas.find(m => m.slot === "oferta" && !usadas.has(m.id));
+      let pos4 = candidatas.find(m => m.slotPreferido === "oferta" && !usadas.has(m.id));
       if (pos4) {
         selecionadas[3] = pos4;
         usadas.add(pos4.id);
       }
 
-      // Posições 1, 2 e 3 - Animação crescente
-      const niveisDesejados = [1, 3, 5];
-      for (let i = 0; i < 3; i++) {
-        let musica = candidatas.find(m => !usadas.has(m.id) && 
-          m.nivelAnimacao >= (niveisDesejados[i] - 1) && 
-          m.nivelAnimacao <= (niveisDesejados[i] + 2));
+      const ordem = ["calma", "moderada", "animada"];
+      for (let nivel of ordem) {
+        let musica = candidatas.find(m => !usadas.has(m.id) && m.nivelAnimacao === nivel);
         if (musica) {
-          selecionadas[i] = musica;
+          selecionadas.push(musica);
           usadas.add(musica.id);
         }
       }
 
-      // Posição 5
-      let pos5 = candidatas.find(m => !usadas.has(m.id));
-      if (pos5) {
-        selecionadas[4] = pos5;
-        usadas.add(pos5.id);
+      while (selecionadas.length < 5) {
+        let prox = candidatas.find(m => !usadas.has(m.id));
+        if (prox) {
+          selecionadas.push(prox);
+          usadas.add(prox.id);
+        } else break;
       }
 
-      // Garantir 5 músicas
-      for (let i = 0; i < 5; i++) {
-        if (!selecionadas[i]) {
-          let proxima = candidatas.find(m => !usadas.has(m.id));
-          if (proxima) selecionadas[i] = proxima;
-        }
-      }
-
-      return selecionadas.filter(m => m !== undefined);
+      return selecionadas.slice(0, 5);
     }
 
-    // ====================== GERAR ESCALA ======================
-    window.gerarEscala = async function() {
+    window.gerarEscala = async function () {
       const data = document.getElementById('data').value;
       const tipoCulto = document.getElementById('tipoCulto').value;
+      const detalhesCulto = document.getElementById('detalhesCulto').value.trim();
 
       if (!data || !tipoCulto) {
-        alert("Preencha a data e o tipo de culto.");
+        alert("Preencha data e tipo de culto.");
         return;
       }
 
       const checks = document.querySelectorAll('.membroCheck:checked');
       const equipeSelecionada = Array.from(checks).map(check => {
-        const membro = membrosDisponiveis.find(m => m.id === check.value);
-        return { nome: membro.nome, funcao: membro.funcao };
+        const m = membrosDisponiveis.find(mem => mem.id === check.value);
+        return { nome: m.nome, funcao: m.funcao };
       });
 
       if (equipeSelecionada.length === 0) {
-        alert("Selecione pelo menos um membro da equipe.");
+        alert("Selecione pelo menos um membro.");
         return;
       }
 
@@ -150,43 +125,56 @@
       escalaAtual = {
         data: data,
         tipoCulto: tipoCulto,
+        detalhesCulto: detalhesCulto,           // ← Novo campo
         equipe: equipeSelecionada,
-        musicas: musicasSugestao.map((m, index) => ({
+        musicas: musicasSugestao.map(m => ({
           titulo: m.titulo,
           tom: m.tom,
           nivelAnimacao: m.nivelAnimacao,
-          slot: m.slot || null,
-          posicao: index + 1
+          slot: m.slotPreferido
         })),
         status: "sugerida",
         criadoEm: new Date().toISOString(),
         observacoes: document.getElementById('observacoesEscala').value.trim()
       };
 
-      let html = `<h3>${new Date(data).toLocaleDateString('pt-BR')} — ${document.getElementById('tipoCulto').options[document.getElementById('tipoCulto').selectedIndex].text}</h3>`;
+      let html = `<h3>${new Date(data).toLocaleDateString('pt-BR')} — ${tipoCulto}</h3>`;
+      if (detalhesCulto) html += `<p><strong>Detalhes:</strong> ${detalhesCulto}</p>`;
       html += `<p><strong>Equipe:</strong> ${equipeSelecionada.map(e => e.nome).join(', ')}</p>`;
       html += '<table><thead><tr><th>Posição</th><th>Música</th><th>Tom</th><th>Nível</th><th>Slot</th></tr></thead><tbody>';
 
-      escalaAtual.musicas.forEach(m => {
+      escalaAtual.musicas.forEach((m, i) => {
         html += `<tr>
-          <td><strong>${m.posicao}ª</strong></td>
+          <td><strong>${i + 1}ª</strong></td>
           <td>${m.titulo}</td>
           <td>${m.tom || '-'}</td>
-          <td style="text-align:center; font-weight:bold;">${m.nivelAnimacao}</td>
+          <td>${m.nivelAnimacao}</td>
           <td>${m.slot || '-'}</td>
         </tr>`;
       });
-
       html += '</tbody></table>';
 
       document.getElementById('listaMusicas').innerHTML = html;
       document.getElementById('resultado').style.display = 'block';
     };
 
-    window.confirmarEscala = async function() {
+    window.confirmarEscala = async function () {
       if (!escalaAtual) return;
+
       try {
         await addDoc(collection(db, "escalasCulto"), escalaAtual);
+
+        // Atualiza última uso das músicas
+        for (let musica of escalaAtual.musicas) {
+          const musicaDoc = musicasDisponiveis.find(m => m.titulo === musica.titulo);
+          if (musicaDoc) {
+            await updateDoc(doc(db, "musicas", musicaDoc.id), {
+              ultimaUso: new Date().toISOString().split('T')[0],
+              vezesUsada: (musicaDoc.vezesUsada || 0) + 1
+            });
+          }
+        }
+
         alert("✅ Escala salva com sucesso!");
         document.getElementById('resultado').style.display = 'none';
         document.getElementById('formEscala').reset();
@@ -195,8 +183,65 @@
       }
     };
 
-    window.onload = carregarDados;
+    function debounce(func, delay) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    function gerarPreviewAoVivo() {
+      const data = document.getElementById('data').value;
+      const tipoCulto = document.getElementById('tipoCulto').value;
+      const detalhesCulto = document.getElementById('detalhesCulto').value.trim();
+      const checks = document.querySelectorAll('.membroCheck:checked');
+
+      if (!data || !tipoCulto || checks.length === 0) return;
+
+      const equipeSelecionada = Array.from(checks).map(check => {
+        const m = membrosDisponiveis.find(mem => mem.id === check.value);
+        return { nome: m.nome, funcao: m.funcao };
+      });
+
+      const tipoCompleto = tipoCulto + ' ' + detalhesCulto;
+      const musicasSugestao = gerarSugestaoMusicas(tipoCompleto);
+
+      let html = `<h3>${new Date(data).toLocaleDateString('pt-BR')} — ${tipoCulto}</h3>`;
+      if (detalhesCulto) html += `<p><strong>Detalhes:</strong> ${detalhesCulto}</p>`;
+      html += `<p><strong>Equipe:</strong> ${equipeSelecionada.map(e => e.nome).join(', ')}</p>`;
+      html += '<table><thead><tr><th>Posição</th><th>Música</th><th>Tom</th><th>Nível</th><th>Slot</th></tr></thead><tbody>';
+
+      musicasSugestao.forEach((m, i) => {
+        html += `<tr>
+      <td><strong>${i + 1}ª</strong></td>
+      <td>${m.titulo}</td>
+      <td>${m.tom || '-'}</td>
+      <td>${m.nivelAnimacao}</td>
+      <td>${m.slot || '-'}</td>
+    </tr>`;
+      });
+      html += '</tbody></table>';
+
+      document.getElementById('listaMusicas').innerHTML = html;
+      document.getElementById('resultado').style.display = 'block';
+    }
+
+    window.onload = function () {
+      carregarDados();
+
+      // Listeners para preview live
+      document.getElementById('data').onchange = gerarPreviewAoVivo;
+      document.getElementById('tipoCulto').onchange = gerarPreviewAoVivo;
+      document.querySelectorAll('.membroCheck').forEach(check => {
+        check.onchange = gerarPreviewAoVivo;
+      });
+
+      const detalhesInput = document.getElementById('detalhesCulto');
+      detalhesInput.oninput = debounce(gerarPreviewAoVivo, 500);
+    };
   </script>
+
 
   <style>
     .switch {
@@ -205,11 +250,13 @@
       width: 52px;
       height: 28px;
     }
+
     .switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
+
     .slider {
       position: absolute;
       cursor: pointer;
@@ -221,6 +268,7 @@
       transition: .4s;
       border-radius: 28px;
     }
+
     .slider:before {
       position: absolute;
       content: "";
@@ -232,41 +280,86 @@
       transition: .4s;
       border-radius: 50%;
     }
-    input:checked + .slider {
+
+    input:checked+.slider {
       background-color: #3498db;
     }
-    input:checked + .slider:before {
+
+    input:checked+.slider:before {
       transform: translateX(24px);
+    }
+
+    .help-text {
+      font-size: 0.9em;
+      color: #6c757d;
+      margin: 6px 0 20px 0;
+      font-style: italic;
+      line-height: 1.4;
+      padding: 8px 0;
+      border-left: 3px solid #e9ecef;
+      padding-left: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h1>📅 Gerar Escala de Louvor</h1>
+    <h1>Gerar Nova Escala</h1>
 
     <div class="card">
       <h2>Dados do Culto</h2>
       <form id="formEscala">
         <label>Data do Culto</label>
         <input type="date" id="data" required>
+        <p class="help-text">Escolha a data do culto futuro. A sugestão considera músicas "descansadas" desde última
+          uso.</p>
 
         <label>Tipo de Culto</label>
         <select id="tipoCulto" required>
           <option value="">Selecione...</option>
-          <option value="ebd">EBD</option>
-          <option value="louvor_e_pregação">Louvor e Pregação</option>
-          <option value="oração_e_doutrina">Oração e Doutrina</option>
-          <option value="evento">Evento</option>
-          <option value="especial">Culto Especial</option>
+          <option value="EBD">EBD</option>
+          <option value="Oração Doutrina">Oração e Doutrina</option>
+          <option value="Louvor e Pregação">Louvor e Pregação</option>
+          <option value="Eventos">Eventos</option>
+          <option value="Culto Festivo">Culto Festivo</option>
         </select>
+        <p class="help-text">Escolha o tipo de culto. O algoritmo analisa palavras-chave (ex: \"Louvor\" prioriza
+          músicas animadas, \"EBD\" prefere calmas). Músicas com slotPreferido compatível ganham +120 pontos no ranking!
+        </p>
 
-        <label>Observações (opcional)</label>
+        <label>Nº de Louvores</label>
+        <select id="numLouvores" required>
+          <option value="2">2 louvores</option>
+          <option value="3">3 louvores</option>
+          <option value="4">4 louvores</option>
+          <option value="5" selected>5 louvores</option>
+          <option value="6">6 louvores</option>
+          <option value="7">7 louvores</option>
+        </select>
+        <p class="help-text">Número de louvores na escala. O algoritmo adapta: oferta na 4ª (se ≥4), balanceia níveis
+          calma/moderada/animada.</p>
+
+        <label>Detalhes do Culto (opcional)</label>
+        <textarea id="detalhesCulto" rows="2" placeholder="Ex: Tema da EBD, Pregador convidado, etc..."></textarea>
+        <p class="help-text">Informações extras: 'Batismo', 'Pregador João', 'Tema EBD: Salvação', 'Ceia'. Ajuda no
+          contexto.</p>
+
+        <label>Observações Gerais (opcional)</label>
         <textarea id="observacoesEscala" rows="2"></textarea>
+        <p class="help-text">Notas para líder: 'Ensaio 18h', 'Ajustar tom 2ª música', 'Membro X viajou'. Fica salva na
+          escala.</p>
 
-        <h3 style="margin: 25px 0 10px 0;">👥 Equipe para este culto</h3>
-        <div id="membrosContainer" style="max-height: 380px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9;"></div>
+        <h3 style="margin:25px 0 10px;">👥 Equipe</h3>
+        <div id="membrosContainer"
+          style="max-height:380px; overflow-y:auto; border:1px solid #ddd; padding:12px; border-radius:8px; background:#f9f9f9;">
+        </div>
+        <p class="help-text">Todos membros selecionados por padrão. Desmarque indisponíveis. Mínimo 1 membro necessário.
+        </p>
 
-        <button type="button" onclick="gerarEscala()" style="margin-top:25px; width:100%; padding:16px; font-size:17px;">
+        <button type="button" onclick="gerarEscala()"
+          style="margin-top:25px; width:100%; padding:16px; font-size:17px;">
           🤖 Gerar Sugestão Inteligente
         </button>
       </form>
@@ -275,12 +368,15 @@
     <div class="card" id="resultado" style="display:none;">
       <h2>🎯 Escala Sugerida</h2>
       <div id="listaMusicas"></div>
-      <br><br>
-      <button onclick="confirmarEscala()" style="background:#27ae60; color:white; padding:15px 30px; font-size:16px;">✅ Confirmar e Salvar Escala</button>
-      <button onclick="document.getElementById('resultado').style.display='none'" style="background:#95a5a6; padding:15px 30px; font-size:16px; margin-left:10px;">Gerar Novamente</button>
+      <br>
+      <button onclick="confirmarEscala()" style="background:#27ae60; color:white; padding:15px 30px;">✅ Confirmar e
+        Salvar</button>
+      <button onclick="gerarPreviewAoVivo()"
+        style="background:#3498db; color:white; padding:15px 30px; margin-left:10px;">🎲 Nova Sugestão</button>
     </div>
 
-    <a href="index.html" style="display:block; text-align:center; margin-top:40px; color:#3498db;">← Voltar ao Menu Principal</a>
+    <a href="index.html" style="display:block; text-align:center; margin-top:40px;">← Voltar</a>
   </div>
 </body>
+
 </html>

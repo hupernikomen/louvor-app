@@ -1,0 +1,158 @@
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+  <title>Cultos Fixos - Escala de Louvor</title>
+  <script type="module">
+    import { db, auth } from './firebase-config.js';
+    import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+    const cultosRef = collection(db, "cultosFixos");
+    let cultoEditandoId = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user || user.email !== "hupcontato@gmail.com") {
+        window.location.href = "login.html";
+      }
+    });
+
+    async function carregarCultos() {
+      const tbody = document.querySelector('#tabelaCultos tbody');
+      tbody.innerHTML = '';
+      const snapshot = await getDocs(cultosRef);
+      
+      snapshot.forEach(docSnap => {
+        const culto = docSnap.data();
+        const id = docSnap.id;
+        const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${dias[culto.diaSemana]}</td>
+          <td>${culto.nome}</td>
+          <td style="text-align:center;">${culto.numMusicas}</td>
+          <td>
+            <button onclick="editarCulto('${id}')" class="btn-editar">Editar</button>
+            <button onclick="excluirCulto('${id}')" class="btn-excluir">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.editarCulto = async function(id) {
+      const snapshot = await getDocs(cultosRef);
+      const cultoDoc = snapshot.docs.find(d => d.id === id);
+      const culto = cultoDoc.data();
+
+      document.getElementById('nomeCulto').value = culto.nome;
+      document.getElementById('diaSemana').value = culto.diaSemana;
+      document.getElementById('numMusicas').value = culto.numMusicas;
+      
+      cultoEditandoId = id;
+      document.querySelector('button[type="submit"]').textContent = 'Atualizar';
+    };
+
+    window.excluirCulto = async function(id) {
+      if (confirm('Excluir este culto fixo?')) {
+        await deleteDoc(doc(db, "cultosFixos", id));
+        carregarCultos();
+        alert('Culto fixo excluído!');
+      }
+    };
+
+    document.getElementById('formCulto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeCulto').value.trim();
+      const diaSemana = parseInt(document.getElementById('diaSemana').value);
+      const numMusicas = parseInt(document.getElementById('numMusicas').value);
+
+      if (!nome || numMusicas < 1 || numMusicas > 10) {
+        alert('Preencha todos os campos corretamente!');
+        return;
+      }
+
+      const cultoData = { nome, diaSemana, numMusicas };
+
+      try {
+        if (cultoEditandoId) {
+          await updateDoc(doc(db, "cultosFixos", cultoEditandoId), cultoData);
+          alert('Culto fixo atualizado!');
+          cultoEditandoId = null;
+          document.querySelector('button[type="submit"]').textContent = 'Salvar Culto Fixo';
+        } else {
+          await addDoc(cultosRef, cultoData);
+          alert('Culto fixo cadastrado!');
+        }
+        e.target.reset();
+        carregarCultos();
+      } catch (e) {
+        alert('Erro: ' + e.message);
+      }
+    });
+
+    window.onload = carregarCultos;
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>📅 Cultos Fixos Semanais</h1>
+    <p class="help-text">Cadastre os cultos regulares. O sistema gerará escalas automaticamente 14 dias antes!</p>
+
+    <div class="card">
+      <h2>Novo Culto Fixo</h2>
+      <form id="formCulto">
+        <label>Nome do Culto *</label>
+        <input type="text" id="nomeCulto" placeholder="Ex: EBD, Louvor e Pregação" required>
+
+        <label>Dia da Semana *</label>
+        <select id="diaSemana" required>
+          <option value="">Selecione...</option>
+          <option value="0">Domingo</option>
+          <option value="1">Segunda-feira</option>
+          <option value="2">Terça-feira</option>
+          <option value="3">Quarta-feira</option>
+          <option value="4">Quinta-feira</option>
+          <option value="5">Sexta-feira</option>
+          <option value="6">Sábado</option>
+        </select>
+
+        <label>Número de Músicas *</label>
+        <select id="numMusicas" required>
+          <option value="">Selecione...</option>
+          <option value="3">3 músicas</option>
+          <option value="4">4 músicas</option>
+          <option value="5">5 músicas</option>
+          <option value="6">6 músicas</option>
+          <option value="7">7 músicas</option>
+        </select>
+
+        <button type="submit">Salvar Culto Fixo</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>🤖 Cultos Fixos Cadastrados</h2>
+      <table id="tabelaCultos">
+        <thead>
+          <tr>
+            <th>Dia</th>
+            <th>Nome</th>
+            <th>Músicas</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <a href="login.html" class="btn-voltar">← Voltar</a>
+  </div>
+</body>
+</html>

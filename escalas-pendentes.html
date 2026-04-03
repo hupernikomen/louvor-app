@@ -4,6 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- ✅ IONICONS -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
   <title>Escalas Pendentes - Aprovar</title>
 
   <style>
@@ -22,18 +26,28 @@
       line-height: 1.6;
     }
 
+    .header {
+      position: sticky;
+      background: #f8f9fa;
+      padding: 16px 16px;
+      top: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      z-index: 100;
+    }
+
     .container {
       max-width: 900px;
       margin: 0 auto;
-      padding: 2rem 1rem;
     }
 
-    h1 {
+    header h1 {
       text-align: center;
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 600;
       color: #2c3e50;
-      margin-bottom: 0.5rem;
     }
 
     .config-section {
@@ -76,7 +90,7 @@
     .pendentes-grid {
       display: grid;
       gap: 1.5rem;
-      margin-bottom: 2rem;
+      margin: 1rem;
     }
 
     .escala-pendente {
@@ -161,12 +175,10 @@
     }
 
     .btn-voltar {
-      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 1rem 1rem;
-      background: #6c757d;
-      color: white;
+      font-size: 1rem;
+      color: rgb(47, 42, 42);
       text-decoration: none;
       border-radius: 8px;
       font-weight: 600;
@@ -175,7 +187,6 @@
     }
 
     .btn-voltar:hover {
-      background: #5a6268;
       transform: translateY(-1px);
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
@@ -193,7 +204,7 @@
     }
 
     .musica-item {
-      padding: 0.75rem 0;
+      padding: 0.3rem 0;
       border-bottom: 1px solid #f1f3f4;
       font-size: 1rem;
       color: #495057;
@@ -224,12 +235,9 @@
     }
 
     @media (max-width: 768px) {
-      .container {
-        padding: 1.5rem 1rem;
-      }
 
       h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
       }
 
       .pendente-header {
@@ -299,7 +307,6 @@
       try {
         const aprovadasSnap = await getDocs(collection(db, "escalasCulto"));
         escalasAprovadas = aprovadasSnap.docs.map(d => d.data().data);
-        console.log("✅ Escalas aprovadas carregadas:", escalasAprovadas.length);
       } catch (e) {
         console.error("Erro ao carregar aprovadas:", e);
       }
@@ -360,7 +367,7 @@
             </div>
             <div class="musicas-preview">
               ${escala.musicas.map((m, i) => `
-                <div class="musica-item">${i + 1}ª - ${m.titulo} ${m.tom ? `(${m.tom})` : ''}</div>
+                <div class="musica-item">${m.titulo} ${m.tom ? `(${m.tom})` : ''}</div>
               `).join('')}
             </div>
             <div class="equipe-preview">
@@ -370,32 +377,30 @@
           container.appendChild(card);
         });
 
-        console.log(`📅 ${pendentesValidas.length} escalas pendentes ordenadas por data (próxima primeiro)`);
       } catch (e) {
         container.innerHTML = '<div class="error">Erro ao carregar escalas pendentes.</div>';
       }
     }
 
-    window.recriarCards = async function() {
+    window.recriarCards = async function () {
       const btnRecarga = document.querySelector('.btn-recarga');
       const textoOriginal = btnRecarga.innerHTML;
-      
+
       btnRecarga.innerHTML = '🔄 Recriando...';
       btnRecarga.disabled = true;
-      
+
       try {
         const musSnap = await getDocs(collection(db, "musicas"));
         todasMusicas = musSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         await carregarEscalasAprovadas();
         await carregarEscalasPendentes();
-        
+
         btnRecarga.innerHTML = '✅ Cards Recriados!';
         setTimeout(() => {
           btnRecarga.innerHTML = textoOriginal;
           btnRecarga.disabled = false;
         }, 1500);
-        
-        console.log('🎵 Músicas atualizadas nos cards pendentes');
+
       } catch (e) {
         alert('Erro ao recriar cards: ' + e.message);
         btnRecarga.innerHTML = textoOriginal;
@@ -441,41 +446,48 @@
     };
 
     async function verificarGeracaoAutomatica() {
-      const cultosSnap = await getDocs(collection(db, "cultosFixos"));
-      const cultosFixos = cultosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try {
+        const cultosSnap = await getDocs(collection(db, "cultosFixos"));
+        const cultosFixos = cultosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
 
-      console.log(`🔄 Verificando geração automática (${diasAnalise} dias antes)...`);
+        const maxDiasFuturo = diasAnalise;
+        let geradas = 0;
 
-      for (let culto of cultosFixos) {
-        let proximaDataCulto = new Date(hoje);
-        const diasAteCulto = (culto.diaSemana - hoje.getDay() + 7) % 7;
-        proximaDataCulto.setDate(hoje.getDate() + diasAteCulto);
 
-        if (proximaDataCulto <= hoje) {
-          proximaDataCulto.setDate(proximaDataCulto.getDate() + 7);
-        }
+        // Loop por TODOS os dias futuros
+        for (let dia = 1; dia <= maxDiasFuturo; dia++) {
+          const dataFuturo = new Date(hoje);
+          dataFuturo.setDate(hoje.getDate() + dia);
 
-        const dataCultoStr = proximaDataCulto.toISOString().split('T')[0];
-        if (escalasAprovadas.includes(dataCultoStr)) {
-          console.log("🚫 Escala já aprovada para", dataCultoStr);
-          continue;
-        }
+          const dataStr = dataFuturo.toISOString().split('T')[0];
+          const diaSemana = dataFuturo.getDay();
 
-        const dataGeracao = new Date(proximaDataCulto);
-        dataGeracao.setDate(proximaDataCulto.getDate() - diasAnalise);
+          // Pula se já aprovada
+          if (escalasAprovadas.includes(dataStr)) {
+            continue;
+          }
 
-        if (dataGeracao <= hoje && proximaDataCulto > hoje) {
-          const q = query(collection(db, "escalasPendentes"), where("data", "==", dataCultoStr));
+          // Verifica se já existe pendente
+          const q = query(collection(db, "escalasPendentes"), where("data", "==", dataStr));
           const existing = await getDocs(q);
 
           if (existing.empty) {
-            console.log(`✅ Gerando escala automática para ${dataCultoStr} (${diasAnalise} dias antes)`);
-            await gerarEscalaAutomatica(culto, proximaDataCulto);
+            // Procura culto para este dia da semana
+            const cultoMatch = cultosFixos.find(c => c.diaSemana === diaSemana);
+
+            if (cultoMatch) {
+              console.log(`🎵 Gerando ${dataStr} - ${cultoMatch.nome}`);
+              await gerarEscalaAutomatica(cultoMatch, dataFuturo);
+              geradas++;
+            }
           }
         }
+
+      } catch (e) {
+        console.error("Erro na geração automática:", e);
       }
     }
 
@@ -513,7 +525,7 @@
     }
 
     // Função para atualizar os dias de análise
-    window.atualizarDiasAnalise = function() {
+    window.atualizarDiasAnalise = function () {
       const input = document.getElementById('diasAnalise');
       const valor = parseInt(input.value);
       if (valor > 0 && valor <= 60) {
@@ -535,22 +547,24 @@
 </head>
 
 <body>
- 
+
   <div class="container">
-    <h1>Escalas Pendentes</h1>
-    <p class="help-text">Escalas geradas automaticamente 14 dias antes. Aprove ou edite!</p>
+
+    <header class="header">
+      <div>
+        <a href="/" class="btn-voltar">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </a>
+      </div>
+      <h1>Escalas Pendentes</h1>
+
+      <div />
+
+    </header>
 
     <div id="pendentesContainer" class="pendentes-grid"></div>
 
-    <div class="btns-footer">
-      <button onclick="recriarCards()" class="btn-recarga">🎵 Recriar Cards</button>
-      <a href="login.html" class="btn-voltar">← Voltar</a>
-    </div>
   </div>
 </body>
 
 </html>
-
-
-
-

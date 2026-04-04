@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Escalas de Louvor</title>
+
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
-    const escalasRef = collection(db, "escalasCulto");
     let usuarioLogado = false;
 
     onAuthStateChanged(auth, (user) => {
@@ -17,7 +17,7 @@
       atualizarMenu(user);
     });
 
-    function atualizarMenu(user) {
+    function atualizarMenu() {
       const btnLogin = document.getElementById('btnLogin');
       const menuLogado = document.getElementById('menuLogado');
       
@@ -32,9 +32,10 @@
 
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
-      feed.innerHTML = '<p class="loading">Carregando escalas aprovadas...</p>';
+      feed.innerHTML = '<p class="loading">Carregando próximas escalas...</p>';
 
       try {
+        const escalasRef = collection(db, "escalasCulto");
         const q = query(escalasRef, orderBy("data"));
         const snapshot = await getDocs(q);
 
@@ -48,133 +49,102 @@
 
         if (escalasAprovadas.length === 0) {
           feed.innerHTML = `
-            <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala postada</h2>
-              <p style="margin-top:10px;">As escalas criadas aparecerão aqui.</p>
+            <div class="empty-state">
+              <h2>Nenhuma escala aprovada ainda</h2>
+              <p>As escalas aparecerão aqui assim que forem aprovadas.</p>
             </div>`;
           return;
         }
 
-        // ✅ ORDENAR POR DATA (mais próximo primeiro)
-        escalasAprovadas.sort((a, b) => {
-          const dataA = new Date(a.data + 'T12:00:00');
-          const dataB = new Date(b.data + 'T12:00:00');
-          return dataA - dataB;
-        });
-
-        feed.innerHTML = '';
+        // Ordena por data (mais próxima primeiro)
+        escalasAprovadas.sort((a, b) => new Date(a.data) - new Date(b.data));
 
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        let encontrouEscala = false;
 
-        escalasAprovadas.forEach(doc => {
-          const e = doc;
-          const escalaId = e.id;
+        feed.innerHTML = '';
 
-          if (!e.data) return;
+        let encontrouFutura = false;
 
-          const [ano, mes, dia] = e.data.split('-').map(Number);
-          const dataEscala = new Date(ano, mes - 1, dia);
-          dataEscala.setHours(0, 0, 0, 0);
+        escalasAprovadas.forEach(escala => {
+          if (!escala.data) return;
 
-          // Só escalas futuras
-          if (dataEscala < hoje) return;
+          const dataEscala = new Date(escala.data + 'T12:00:00');
+          if (dataEscala < hoje) return; // só futuras
 
-          encontrouEscala = true;
+          encontrouFutura = true;
+
+          const dataFormatada = dataEscala.toLocaleDateString('pt-BR', { 
+            weekday: 'short', 
+            day: '2-digit', 
+            month: 'short'
+          });
 
           const card = document.createElement('div');
           card.className = 'escala-card';
 
           if (usuarioLogado) {
             card.style.cursor = 'pointer';
-            card.onclick = () => window.location.href = `editar-escala.html?id=${escalaId}`;
-          }
-
-          let dataFormatada = "Data inválida";
-          if (e.data) {
-            const dataCorreta = new Date(ano, mes - 1, dia);
-            dataFormatada = dataCorreta.toLocaleDateString('pt-BR', { 
-              weekday: 'short', 
-              day: '2-digit', 
-              month: 'short'
-            });
+            card.onclick = () => window.location.href = `editar-escala.html?id=${escala.id}`;
           }
 
           card.innerHTML = `
             <div class="card-header">
-              <span class="tipo-culto">${e.tipoCulto.replace('_e_', ' e ').toUpperCase()}</span>
-              <div>
-                <span class="data">${dataFormatada}</span>
-              </div>
+              <span class="tipo-culto">${escala.tipoCulto}</span>
+              <span class="data">${dataFormatada}</span>
             </div>
 
             <div class="musicas">
-              <div class="musica-list">
-                ${e.musicas.map(m => `
-                  <div class="musica-item">
-                    <span class="titulo">${m.titulo} ${m.tom ? `- ${m.tom}` : ''}</span>
-                  </div>
-                `).join('')}
-              </div>
+              ${escala.musicas.map(m => `
+                <div class="musica-item">
+                  ${m.titulo} ${m.tom ? `<span class="tom">(${m.tom})</span>` : ''}
+                </div>
+              `).join('')}
             </div>
 
             <div class="equipe">
+              <strong>Equipe:</strong>
               <div class="membros">
-                ${e.equipe.map(m => `
-                  <span class="membro-tag">${m.nome}</span>
-                `).join('')}
+                ${escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('')}
               </div>
             </div>
 
-            ${e.observacoes ? `
+            ${escala.observacoes ? `
               <div class="observacoes">
-                <strong>Obs.:</strong> ${e.observacoes}
+                <strong>Obs.:</strong> ${escala.observacoes}
               </div>` : ''}
           `;
 
           feed.appendChild(card);
         });
 
-        if (!encontrouEscala) {
+        if (!encontrouFutura) {
           feed.innerHTML = `
-            <div style="text-align:center; padding:100px 20px; color:#999;">
-              <h2>Nenhuma escala futura</h2>
-              <p style="margin-top:10px;">As próximas escalas aparecerão aqui.</p>
+            <div class="empty-state">
+              <h2>Não há escalas futuras aprovadas</h2>
+              <p>As próximas escalas aparecerão aqui.</p>
             </div>`;
         }
 
-        console.log(`📅 ${escalasAprovadas.filter(e => {
-          const dataEscala = new Date(e.data + 'T12:00:00');
-          return dataEscala >= hoje;
-        }).length} escalas futuras ordenadas (próxima primeiro)`);
-
       } catch (error) {
         console.error(error);
-        feed.innerHTML = '<p style="color:red; text-align:center; padding:40px;">Erro ao carregar as escalas.</p>';
+        feed.innerHTML = '<p class="error">Erro ao carregar as escalas.</p>';
       }
     }
 
     window.onload = () => {
       carregarEscalas();
-      atualizarMenu();
     };
   </script>
 
   <style>
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background-color: #f8f9fc;
+      background: #f8f9fc;
       color: #333;
       line-height: 1.6;
     }
-
     .header {
       position: sticky;
       background: #f8f9fa;
@@ -183,46 +153,22 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       z-index: 100;
     }
-
-    .header p {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #4c545c;
-      margin-left: 32px;
-    }
-
-    .btn-login {
-      background: #3498db;
-      color: white;
-      padding: 10px 18px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 0.80rem;
-      transition: all 0.2s;
-    }
-
-    .btn-login:hover {
-      background: #2980b9;
-    }
-
     .container {
       max-width: 100%;
-      margin: 0px;
+      margin: 0;
       padding: 22px;
     }
-
     .escala-card {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
       margin-bottom: 35px;
       overflow: hidden;
       border: 1px solid #f0f0f0;
     }
-
     .card-header {
       background: #f1f5f9;
       padding: 16px 20px;
@@ -231,64 +177,46 @@
       align-items: center;
       border-bottom: 1px solid #eee;
     }
-
-    .data {
-      font-weight: 500;
-      color: #2c3e50;
-      font-size: .90rem;
-    }
-
     .tipo-culto {
       background: #3498db;
       color: #fff;
-      padding: 4px 10px;
+      padding: 4px 14px;
       border-radius: 20px;
-      font-size: 0.80rem;
+      font-size: 0.85rem;
       font-weight: 600;
+      text-transform: uppercase;
     }
-
+    .data {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.95rem;
+    }
     .musicas {
       padding: 20px;
     }
-
-    .musica-list {
-      display: flex;
-      flex-direction: column;
-    }
-
     .musica-item {
+      padding: 10px 0;
       border-bottom: 1px solid #f5f5f5;
+      font-size: 1rem;
     }
-
-    .musica-item:last-child {
-      border-bottom: none;
-    }
-
-    .titulo {
-      display: block;
-      margin-left: 12px;
-      font-size: .90rem;
-      color: #263238;
-    }
-
+    .musica-item:last-child { border-bottom: none; }
+    .tom { color: #27ae60; font-weight: 500; }
     .equipe {
-      padding: 0 20px 20px 20px;
+      padding: 0 20px 20px;
     }
-
     .membros {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 6px;
+      margin-top: 8px;
     }
-
     .membro-tag {
       background: #f1f5f9;
       color: #334155;
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 20px;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
     }
-
     .observacoes {
       background: #fff8e1;
       padding: 16px 20px;
@@ -296,24 +224,29 @@
       color: #5d4037;
       font-size: 0.95rem;
     }
-
-    @media (max-width: 480px) {
-      .container {
-        margin: 0px;
-      }
-      .header {
-        padding: 14px 18px;
-      }
+    .loading, .empty-state, .error {
+      text-align: center;
+      padding: 80px 20px;
+      color: #777;
+    }
+    .empty-state h2 { color: #2c3e50; margin-bottom: 12px; }
+    .btn-login {
+      background: #3498db;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
   <header class="header">
-    <p>Escala de Louvor</p>
+    <p><strong>Escala de Louvor</strong></p>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
-      <div id="menuLogado" style="display:none; gap:10px; flex-wrap:wrap;">
-        <a href="menu.html" class="btn-login">Menu</a>
+      <div id="menuLogado" style="display:none; gap:10px;">
+        <a href="menu.html" class="btn-login">Menu Admin</a>
       </div>
     </div>
   </header>

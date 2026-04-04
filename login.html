@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Escala de Louvor</title>
-  <link rel="stylesheet" href="style.css">
+
   <script type="module">
     import { auth } from './firebase-config.js';
     import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -13,12 +12,11 @@
     const provider = new GoogleAuthProvider();
     const emailPermitido = "hupcontato@gmail.com";
 
-    // Verifica estado de autenticação
     onAuthStateChanged(auth, (user) => {
       const menuLogado = document.getElementById('menu-logado');
       const btnLogin = document.getElementById('btn-login');
 
-      if (user && user.email.toLowerCase() === emailPermitido.toLowerCase()) {
+      if (user && user.email?.toLowerCase() === emailPermitido.toLowerCase()) {
         btnLogin.style.display = 'none';
         menuLogado.style.display = 'block';
       } else {
@@ -32,15 +30,14 @@
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        if (user.email.toLowerCase() !== emailPermitido.toLowerCase()) {
+        if (user.email?.toLowerCase() !== emailPermitido.toLowerCase()) {
           await signOut(auth);
           alert("❌ Acesso negado!\n\nApenas o email hupcontato@gmail.com tem permissão.");
           return;
         }
 
         alert(`✅ Bem-vindo, ${user.displayName || 'Líder'}!`);
-        // Recarrega a página para atualizar o menu
-        window.location.reload();
+        window.location.href = "menu.html";
 
       } catch (error) {
         console.error(error);
@@ -59,7 +56,7 @@
 
   <style>
     body {
-      background: #fff;
+      background: #f8f9fa;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -67,7 +64,6 @@
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
     }
-
     .login-card {
       background: white;
       padding: 60px 40px;
@@ -77,12 +73,10 @@
       max-width: 460px;
       width: 90%;
     }
-
     .login-card h1 {
       margin-bottom: 8px;
       color: #2c3e50;
     }
-
     .btn-google {
       background-color: #fff;
       color: #444;
@@ -99,19 +93,16 @@
       width: 100%;
       margin-bottom: 20px;
     }
-
     .btn-google:hover {
       background-color: #f8f9fa;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
       transform: translateY(-3px);
     }
-
     .menu-logado {
       margin-top: 30px;
       padding-top: 25px;
       border-top: 1px solid #eee;
     }
-
     .menu-logado a {
       display: block;
       background: #3498db;
@@ -122,13 +113,11 @@
       text-decoration: none;
       font-weight: 600;
     }
-
     .menu-logado a:hover {
       background: #2980b9;
     }
   </style>
 </head>
-
 <body>
   <div class="login-card">
     <h1>Escala de Louvor</h1>
@@ -136,32 +125,24 @@
 
     <!-- Botão de Login -->
     <button id="btn-login" onclick="fazerLoginGoogle()" class="btn-google">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="26" height="26"
-        alt="Google">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="26" height="26" alt="Google">
       Entrar com Google
     </button>
 
     <!-- Menu quando já está logado -->
     <div id="menu-logado" style="display: none;">
-
-
       <div class="menu-logado">
-        <a href="index.html">Feed</a>
-        <a href="gerar-escala.html">Nova Escala</a>
-        <a href="cadastro-musicas.html">Cadastrar Músicas</a>
-        <a href="cadastro-membros.html">Cadastrar Equipe</a>
-        <a href="escalas-pendentes.html">Escalas Pendentes</a>
-        <a href="cultos-fixos.html">Cultos</a>
+        <a href="menu.html">🏠 Menu Principal</a>
+        <a href="index.html">📅 Ver Escalas Publicadas</a>
+        <a href="escalas-pendentes.html">📋 Escalas Pendentes</a>
+        <a href="cadastro-musicas.html">🎵 Cadastrar Músicas</a>
       </div>
 
-      <button onclick="fazerLogout()"
-        style="margin-top:25px; background:none; border:none; color:#e74c3c; cursor:pointer;">
+      <button onclick="fazerLogout()" 
+        style="margin-top:25px; background:none; border:none; color:#e74c3c; cursor:pointer; font-size:1rem;">
         Sair da conta
       </button>
     </div>
-
-
   </div>
 </body>
-
 </html>

@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editar Escala - Louvor</title>
+
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { 
-      doc, getDoc, updateDoc, collection, getDocs, query, where 
+      doc, getDoc, updateDoc, collection, getDocs, addDoc 
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
@@ -15,7 +16,8 @@
     let escalaAtual = null;
     let todasMusicas = [];
     let equipeAtual = [];
-    let cultosFixos = []; // ✅ Novos cultos fixos
+    let cultosFixos = [];
+    let isNovaEscala = false;
 
     onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "hupcontato@gmail.com") {
@@ -23,11 +25,12 @@
       }
     });
 
-    function getIdFromUrl() {
-      return new URLSearchParams(window.location.search).get('id');
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      escalaId = params.get('id');
+      isNovaEscala = params.get('nova') === 'true';
     }
 
-    // ✅ CARREGA CULTOS FIXOS PARA DEFINIR NÚMERO DE MÚSICAS
     async function carregarCultosFixos() {
       const snapshot = await getDocs(collection(db, "cultosFixos"));
       cultosFixos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -38,26 +41,13 @@
       todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
-    // ✅ GERA OPÇÕES DE NÚMERO DE MÚSICAS BASEADO EM CULTOS FIXOS
     function gerarOpcoesNumMusicas() {
       const select = document.getElementById('numMusicas');
       select.innerHTML = '<option value="">Selecione...</option>';
-      
       const numsUnicos = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a,b) => a-b);
       numsUnicos.forEach(num => {
         select.innerHTML += `<option value="${num}">${num} músicas</option>`;
       });
-    }
-
-    function normalizarTipoCulto(tipo) {
-      const mapa = {
-        'ebd': 'ebd', 'EBD': 'ebd',
-        'louvor e pregação': 'louvor_e_pregação', 'Louvor e Pregação': 'louvor_e_pregação',
-        'oração e doutrina': 'oração_e_doutrina', 'Oração e Doutrina': 'oração_e_doutrina',
-        'evento': 'evento', 'Evento': 'evento',
-        'especial': 'especial', 'Culto Especial': 'especial'
-      };
-      return mapa[tipo?.toLowerCase().replace(/[^a-záéíóúç ]/g, '')] || 'oração_e_doutrina';
     }
 
     function renderizarSelectsMusicas(numMusicas = 5) {
@@ -65,15 +55,15 @@
       container.innerHTML = '';
 
       for (let i = 0; i < numMusicas; i++) {
-        const musicaAtual = escalaAtual.musicas?.[i] || {};
+        const musicaAtual = escalaAtual?.musicas?.[i] || {};
         container.innerHTML += `
           <div class="musica-edit">
             <label><strong>${i + 1}ª Música</strong></label>
             <select class="select-musica" data-index="${i}">
-              <option value="">Selecione...</option>
+              <option value="">Selecione uma música...</option>
               ${todasMusicas.map(mus => `
                 <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
-                  ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''} 
+                  ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''}
                 </option>
               `).join('')}
             </select>
@@ -84,10 +74,7 @@
 
     function renderizarEquipeSwitches() {
       const container = document.getElementById('equipeContainer');
-      if (!equipeAtual?.length) {
-        container.innerHTML = '';
-        return;
-      }
+      if (!equipeAtual?.length) return;
 
       let html = '<div class="equipe-grid">';
       equipeAtual.forEach((membro, index) => {
@@ -108,48 +95,110 @@
       container.innerHTML = html;
     }
 
-    // ✅ MUDA NÚMERO DE MÚSICAS DINAMICAMENTE
     function onChangeNumMusicas() {
-      const numMusicas = parseInt(document.getElementById('numMusicas').value);
-      if (numMusicas) {
-        renderizarSelectsMusicas(numMusicas);
-      }
+      const num = parseInt(document.getElementById('numMusicas').value);
+      if (num) renderizarSelectsMusicas(num);
     }
 
     async function carregarEscala() {
-      escalaId = getIdFromUrl();
-      if (!escalaId) return window.history.back();
+      getUrlParams();
 
-      // ✅ CARREGA TUDO
       await Promise.all([carregarCultosFixos(), carregarTodasMusicas()]);
       gerarOpcoesNumMusicas();
 
-      let docRef = doc(db, "escalasPendentes", escalaId);
-      let docSnap = await getDoc(docRef);
-      
-      if (!docSnap.exists()) {
-        docRef = doc(db, "escalasCulto", escalaId);
-        docSnap = await getDoc(docRef);
+      if (isNovaEscala) {
+        // Nova escala - valores iniciais vazios
+        escalaAtual = {
+          data: "",
+          tipoCulto: "Culto Personalizado",
+          numMusicas: 5,
+          musicas: [],
+          equipe: [],
+          observacoes: ""
+        };
+        equipeAtual = [];
+      } else if (escalaId) {
+        // Edição de escala existente
+        let docRef = doc(db, "escalasPendentes", escalaId);
+        let docSnap = await getDoc(docRef);
+
+        if (!docSnap.exists()) {
+          docRef = doc(db, "escalasCulto", escalaId);
+          docSnap = await getDoc(docRef);
+        }
+
+        if (docSnap.exists()) {
+          escalaAtual = docSnap.data();
+          equipeAtual = (escalaAtual.equipe || []).map(m => ({ ...m, ativo: m.ativo !== false }));
+        } else {
+          alert("Escala não encontrada!");
+          window.history.back();
+          return;
+        }
       }
 
-      if (!docSnap.exists()) return window.history.back();
-
-      escalaAtual = docSnap.data();
-      equipeAtual = (escalaAtual.equipe || []).map(m => ({ ...m, ativo: m.ativo !== false }));
-
-      // Preenche campos
+      // Preenche os campos
       document.getElementById('data').value = escalaAtual.data || '';
-      document.getElementById('tipoCulto').value = normalizarTipoCulto(escalaAtual.tipoCulto);
+      document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
       
-      // ✅ Define número de músicas baseado no culto fixo
-      const cultoFixo = cultosFixos.find(c => c.nome.toLowerCase().includes(escalaAtual.tipoCulto?.toLowerCase()));
-      const numMusicasPadrao = cultoFixo?.numMusicas || escalaAtual.musicas?.length || 5;
-      document.getElementById('numMusicas').value = numMusicasPadrao;
-      renderizarSelectsMusicas(numMusicasPadrao);
+      const numPadrao = escalaAtual.numMusicas || 5;
+      document.getElementById('numMusicas').value = numPadrao;
+      renderizarSelectsMusicas(numPadrao);
 
       document.getElementById('observacoes').value = escalaAtual.observacoes || '';
       renderizarEquipeSwitches();
     }
+
+    window.salvarAlteracoes = async () => {
+      const numMusicas = parseInt(document.getElementById('numMusicas').value);
+      if (!numMusicas) return alert('Selecione o número de músicas!');
+
+      const novasMusicas = Array.from(document.querySelectorAll('.select-musica'))
+        .map(select => {
+          const musica = todasMusicas.find(m => m.id === select.value);
+          return musica ? { titulo: musica.titulo, tom: musica.tom } : null;
+        })
+        .filter(Boolean);
+
+      if (novasMusicas.length !== numMusicas) {
+        return alert('Você deve selecionar todas as músicas!');
+      }
+
+      const equipeSalvar = equipeAtual
+        .filter(m => m.ativo)
+        .map(m => ({ nome: m.nome, funcao: m.funcao }));
+
+      const dados = {
+        data: document.getElementById('data').value,
+        tipoCulto: document.getElementById('tipoCulto').value || "Culto Personalizado",
+        numMusicas,
+        musicas: novasMusicas,
+        observacoes: document.getElementById('observacoes').value.trim(),
+        equipe: equipeSalvar,
+        status: "pendente",
+        criadoEm: new Date().toISOString()
+      };
+
+      try {
+        if (isNovaEscala) {
+          // Cria nova escala
+          const docRef = await addDoc(collection(db, "escalasPendentes"), dados);
+          alert("✅ Nova escala criada com sucesso!");
+          window.location.href = "escalas-pendentes.html";
+        } else if (escalaId) {
+          // Atualiza escala existente
+          let docRef = doc(db, "escalasPendentes", escalaId);
+          let docSnap = await getDoc(docRef);
+          if (!docSnap.exists()) docRef = doc(db, "escalasCulto", escalaId);
+
+          await updateDoc(docRef, dados);
+          alert("✅ Escala atualizada com sucesso!");
+          window.location.href = "escalas-pendentes.html";
+        }
+      } catch (e) {
+        alert("Erro ao salvar: " + e.message);
+      }
+    };
 
     document.addEventListener('change', (e) => {
       if (e.target.classList.contains('switch-input')) {
@@ -160,106 +209,34 @@
       }
     });
 
-    window.salvarAlteracoes = async () => {
-      const numMusicas = parseInt(document.getElementById('numMusicas').value);
-      if (!numMusicas) return alert('Selecione o número de músicas!');
-
-      const novasMusicas = Array.from(document.querySelectorAll('.select-musica'))
-        .map(s => todasMusicas.find(m => m.id === s.value))
-        .filter(Boolean)
-        .map(m => ({ titulo: m.titulo, tom: m.tom, nivelAnimacao: m.nivelAnimacao }));
-
-      if (novasMusicas.length !== numMusicas) {
-        return alert('Selecione todas as músicas!');
-      }
-
-      const dataInput = document.getElementById('data').value;
-      const dataSalvar = dataInput ? new Date(dataInput + 'T12:00:00').toISOString().split('T')[0] : null;
-      const equipeSalvar = equipeAtual.filter(m => m.ativo).map(m => ({ nome: m.nome, funcao: m.funcao }));
-
-      const dados = {
-        data: dataSalvar,
-        tipoCulto: document.getElementById('tipoCulto').value,
-        numMusicas, // ✅ Salva número de músicas
-        musicas: novasMusicas,
-        observacoes: document.getElementById('observacoes').value.trim(),
-        equipe: equipeSalvar,
-        status: escalaAtual.status || "pendente"
-      };
-
-      let docRef = doc(db, "escalasPendentes", escalaId);
-      let docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) docRef = doc(db, "escalasCulto", escalaId);
-
-      await updateDoc(docRef, dados);
-      alert(`✅ Salvo! ${numMusicas} músicas | ${equipeSalvar.length} membros`);
-      window.location.href = "escalas-pendentes.html";
-    };
-
     window.onload = carregarEscala;
   </script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: system-ui, sans-serif; 
-      background: #fff;
-      min-height: 100vh;
-      padding-bottom: 2rem;
-    }
-
-    .header {
-      padding: 1rem 1.5rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .header h1 { font-size: 1.3rem; color: #1a202c; margin: 0; }
-
+    body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; padding-bottom: 2rem; }
+    .header { padding: 1rem 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; }
-
     .card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      padding: 2rem;
-      margin-bottom: 1rem;
+      background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      padding: 2rem; margin-bottom: 1rem;
     }
-
-    label { 
-      display: block; 
-      margin: 1.5rem 0 0.5rem 0; 
-      font-weight: 600; 
-      color: #4a5568; 
-      font-size: 0.95rem;
-    }
-
+    label { display: block; margin: 1.5rem 0 0.5rem 0; font-weight: 600; color: #4a5568; }
     input, select, textarea {
-      width: 100%;
-      padding: 0.9rem;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: border-color 0.2s;
+      width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;
     }
-
     input:focus, select:focus, textarea:focus { outline: none; border-color: #4299e1; }
     textarea { resize: vertical; min-height: 80px; }
 
-    /* EQUIPE COMPACTA */
     .equipe-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
     .membro-item {
       display: flex; justify-content: space-between; align-items: center;
       padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7;
     }
-    .membro-info { flex: 1; }
-    .membro-nome { font-weight: 600; color: #2d3748; font-size: 1rem; }
-    .membro-funcao { color: #718096; font-size: 0.85rem; margin-top: 0.2rem; }
+    .membro-nome { font-weight: 600; color: #2d3748; }
+    .membro-funcao { color: #718096; font-size: 0.85rem; }
 
-    /* SWITCH COMPACTO */
-    .switch-container { position: relative; display: inline-block; width: 50px; height: 26px; }
+    .switch-container { position: relative; width: 50px; height: 26px; }
     .switch-input { opacity: 0; width: 0; height: 0; }
     .switch-toggle {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -273,21 +250,17 @@
     .switch-input:checked + .switch-toggle::before { transform: translateX(24px); }
 
     .musica-edit { margin-bottom: 1.5rem; }
-
     button {
-      width: 100%; padding: 1rem 1rem; border: none; border-radius: 10px;
+      width: 100%; padding: 1rem; border: none; border-radius: 10px;
       font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem;
-      transition: all 0.2s;
     }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
-    .btn-salvar:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(72,187,120,0.4); }
-    .btn-cancelar { background: #a0aec0; color: white; margin-top: 0.5rem; }
-    .btn-cancelar:hover { background: #718096; }
+    .btn-cancelar { background: #a0aec0; color: white; }
   </style>
 </head>
 <body>
   <header class="header">
-    <h1>Editar Escala</h1>
+    <h1>${isNovaEscala ? 'Nova Escala' : 'Editar Escala'}</h1>
     <a href="escalas-pendentes.html" style="color:#4299e1; font-weight:500; text-decoration:none;">← Voltar</a>
   </header>
 
@@ -298,17 +271,17 @@
 
       <label>Tipo de Culto</label>
       <select id="tipoCulto">
-        <option value="ebd">EBD</option>
         <option value="louvor_e_pregação">Louvor e Pregação</option>
+        <option value="ebd">EBD</option>
         <option value="oração_e_doutrina">Oração e Doutrina</option>
         <option value="evento">Evento</option>
         <option value="especial">Culto Especial</option>
+        <option value="Culto Personalizado">Culto Personalizado</option>
       </select>
 
-      <!-- ✅ SELECT DINÂMICO DE NÚMERO DE MÚSICAS -->
-      <label>Nº de Músicas <span id="cultoReferencia" style="color:#666; font-size:0.9rem;"></span></label>
+      <label>Nº de Músicas</label>
       <select id="numMusicas" onchange="onChangeNumMusicas()">
-        <option value="">Carregando...</option>
+        <option value="">Selecione...</option>
       </select>
 
       <div id="equipeContainer"></div>

@@ -4,7 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cadastro de Membros da Equipe - Louvor</title>
-  <link rel="stylesheet" href="style.css">
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa; color: #333; line-height: 1.6; min-height: 100vh;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header {
+      position: sticky; background: white; padding: 16px 20px; top: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08); z-index: 100; border-radius: 12px; margin-bottom: 2rem;
+    }
+    .card {
+      background: white; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      padding: 2rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
+    }
+    .card h2 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.4rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; }
+    form { display: grid; gap: 1.25rem; }
+    label { font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem; display: block; }
+    input, select {
+      width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 10px;
+      font-size: 16px; background: #fafbfc;
+    }
+    input:focus, select:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+    button[type="submit"] {
+      background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;
+      padding: 16px 24px; border: none; border-radius: 12px; font-size: 1.1rem;
+      font-weight: 600; cursor: pointer; margin-top: 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; background: white; border-radius: 12px; overflow: hidden; }
+    th, td { padding: 18px 16px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+    th { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+    .btn-tabela {
+      padding: 10px 12px; border: none; border-radius: 10px; cursor: pointer;
+      margin: 0 4px; width: 48px; height: 48px; display: inline-flex;
+      align-items: center; justify-content: center;
+    }
+    .btn-tabela.editar { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
+    .btn-tabela.excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+  </style>
+
   <script type="module">
     import { db } from './firebase-config.js';
     import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -12,51 +56,44 @@
     const membrosRef = collection(db, "membrosEquipe");
     let membroEditandoId = null;
 
-    // ====================== CARREGAR MEMBROS ======================
     async function carregarMembros() {
       const tbody = document.querySelector('#tabelaMembros tbody');
       tbody.innerHTML = '';
 
-      try {
-        const snapshot = await getDocs(membrosRef);
-        snapshot.forEach((docSnap) => {
-          const membro = docSnap.data();
-          const id = docSnap.id;
+      const snapshot = await getDocs(membrosRef);
+      snapshot.forEach((docSnap) => {
+        const membro = docSnap.data();
+        const id = docSnap.id;
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${membro.nome}</td>
-            <td>${membro.funcao}</td>
-            <td>
-              <button onclick="editarMembro('${id}')" style="background:#f39c12; color:white; border:none; padding:6px 12px; border-radius:5px; margin-right:5px;">Editar</button>
-              <button onclick="excluirMembro('${id}')" style="background:#e74c3c; color:white; border:none; padding:6px 12px; border-radius:5px;">Excluir</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        console.error(e);
-      }
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${membro.nome}</td>
+          <td>${membro.funcao}</td>
+          <td style="text-align:center;">
+            <button onclick="editarMembro('${id}')" class="btn-tabela editar" title="Editar">
+              <ion-icon name="create-outline"></ion-icon>
+            </button>
+            <button onclick="excluirMembro('${id}')" class="btn-tabela excluir" title="Excluir">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
-    // ====================== EDITAR MEMBRO ======================
     window.editarMembro = async function(id) {
-      try {
-        const snapshot = await getDocs(membrosRef);
-        const membroDoc = snapshot.docs.find(d => d.id === id);
-        const membro = membroDoc.data();
+      const snapshot = await getDocs(membrosRef);
+      const membroDoc = snapshot.docs.find(d => d.id === id);
+      const membro = membroDoc.data();
 
-        document.getElementById('nome').value = membro.nome || '';
-        document.getElementById('funcao').value = membro.funcao || '';
+      document.getElementById('nome').value = membro.nome || '';
+      document.getElementById('funcao').value = membro.funcao || '';
 
-        membroEditandoId = id;
-        document.querySelector('button[type="submit"]').textContent = "Atualizar Membro";
-      } catch (e) {
-        alert("Erro ao carregar membro: " + e.message);
-      }
+      membroEditandoId = id;
+      document.querySelector('button[type="submit"]').textContent = "Atualizar Membro";
     };
 
-    // ====================== SALVAR OU ATUALIZAR ======================
     document.getElementById('formMembro').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -69,8 +106,7 @@
 
       try {
         if (membroEditandoId) {
-          const docRef = doc(db, "membrosEquipe", membroEditandoId);
-          await updateDoc(docRef, membro);
+          await updateDoc(doc(db, "membrosEquipe", membroEditandoId), membro);
           alert("✅ Membro atualizado com sucesso!");
           membroEditandoId = null;
           document.querySelector('button[type="submit"]').textContent = "Salvar Membro";
@@ -79,35 +115,31 @@
           alert("✅ Membro cadastrado com sucesso!");
         }
 
-        document.getElementById('formMembro').reset();
+        e.target.reset();
         carregarMembros();
       } catch (e) {
         alert("Erro ao salvar: " + e.message);
       }
     });
 
-    // ====================== EXCLUIR ======================
     window.excluirMembro = async function(id) {
       if (confirm("Deseja realmente excluir este membro?")) {
-        try {
-          await deleteDoc(doc(db, "membrosEquipe", id));
-          alert("Membro excluído!");
-          carregarMembros();
-        } catch (e) {
-          alert("Erro ao excluir: " + e.message);
-        }
+        await deleteDoc(doc(db, "membrosEquipe", id));
+        alert("Membro excluído!");
+        carregarMembros();
       }
     };
 
     window.onload = carregarMembros;
   </script>
 </head>
+
 <body>
   <div class="container">
-    <h1>👥 Cadastro de Membros da Equipe</h1>
+    <div id="header-placeholder"></div>
 
     <div class="card">
-      <h2 id="tituloForm">Novo Membro</h2>
+      <h2>Novo Membro da Equipe</h2>
       <form id="formMembro">
         <label>Nome Completo *</label>
         <input type="text" id="nome" required placeholder="Ex: João Silva">
@@ -141,10 +173,9 @@
         <tbody></tbody>
       </table>
     </div>
-
-    <div style="text-align: center; margin-top: 30px;">
-      <a href="index.html" style="color: #3498db; text-decoration: none;">← Voltar ao Menu Principal</a>
-    </div>
   </div>
+
+  <script src="header.js"></script>
+  <script>carregarHeader('Membros');</script>
 </body>
 </html>

@@ -1,7 +1,7 @@
+// firebase-config.js
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 import { getAuth, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyAHzo1kpTkCRrwq2KUOwCk3_NJsUfVJMqY",
@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Isso faz o login persistir mesmo após fechar o navegador
-auth.setPersistence("local");   // ← Adicionado isso
+// Persistência de login (fica logado mesmo após fechar o navegador)
+setPersistence(auth, browserLocalPersistence);
 
 export { db, auth };

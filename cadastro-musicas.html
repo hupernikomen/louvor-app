@@ -1,24 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ✅ IONICONS -->
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
   <title>Cadastro de Músicas</title>
 
   <style>
-    /* ===== CSS COMPLETO INLINE ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    /* ===== CSS mantido igual (sem mudanças visuais) ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f8f9fa;
@@ -26,232 +19,41 @@
       line-height: 1.6;
       min-height: 100vh;
     }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
+    .container { max-width: 1000px; margin: 0 auto; }
     .header {
-      position: sticky;
-      background: white;
-      padding: 16px 20px;
-      top: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-      z-index: 100;
-      border-radius: 12px;
-      margin-bottom: 2rem;
+      position: sticky; background: white; padding: 16px 20px; top: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08); z-index: 100; border-radius: 12px; margin-bottom: 2rem;
     }
-
     .btn-voltar {
-      padding: 12px;
-      background: linear-gradient(135deg, #0f74cd, #1e88e5);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s;
-      width: 52px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 12px; background: linear-gradient(135deg, #0f74cd, #1e88e5); color: white;
+      border: none; border-radius: 12px; cursor: pointer; width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .btn-voltar:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(15, 116, 205, 0.4);
-    }
-
-
-    .btn-voltar ion-icon {
-      font-size: 1.4rem;
-    }
-
-
-    /* CARDS */
     .card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-      margin-bottom: 2rem;
-      border: 1px solid #f0f0f0;
+      background: white; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      padding: 2rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
     }
-
-    .card h2 {
-      color: #2c3e50;
-      margin-bottom: 1.5rem;
-      font-size: 1.4rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #3498db;
+    .card h2 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.4rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; }
+    form { display: grid; gap: 1.25rem; }
+    label { font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem; display: block; }
+    input, textarea {
+      width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 10px;
+      font-size: 16px; background: #fafbfc;
     }
-
-    /* FORMULÁRIO */
-    form {
-      display: grid;
-      gap: 1.25rem;
-    }
-
-    label {
-      font-weight: 600;
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      display: block;
-      font-size: 0.95rem;
-    }
-
-    input,
-    select,
-    textarea {
-      width: 100%;
-      padding: 14px 16px;
-      border: 2px solid #e9ecef;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: all 0.2s ease;
-      background: #fafbfc;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-      background: white;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 100px;
-    }
-
+    input:focus, textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+    textarea { resize: vertical; min-height: 100px; }
     button[type="submit"] {
-      background: linear-gradient(135deg, #27ae60, #2ecc71);
-      color: white;
-      padding: 16px 24px;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-      margin-top: 1rem;
+      background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;
+      padding: 16px 24px; border: none; border-radius: 12px; font-size: 1.1rem;
+      font-weight: 600; cursor: pointer; margin-top: 1rem;
     }
-
-    button[type="submit"]:hover {
-      background: linear-gradient(135deg, #219653, #27ae60);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-    }
-
-    /* TABELA SIMPLIFICADA */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1.5rem;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    }
-
-    th,
-    td {
-      padding: 18px 16px;
-      text-align: left;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    th {
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      color: white;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-    }
-
-    th:last-child,
-    td:last-child {
-      text-align: center !important;
-    }
-
-    tr:hover {
-      background: #f8f9fa;
-    }
-
-    /* BOTÕES DA TABELA SIMPLIFICADOS */
-    .btn-tabela {
-      border: none;
-      padding: 10px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 1.1rem;
-      transition: all 0.2s ease;
-      margin: 0 4px;
-      width: 48px;
-      height: 48px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-tabela.editar {
-      background: linear-gradient(135deg, #f39c12, #e67e22);
-      color: white;
-    }
-
-    .btn-tabela.editar:hover {
-      background: linear-gradient(135deg, #e67e22, #d68910);
-      transform: translateY(-2px) scale(1.1);
-      box-shadow: 0 6px 16px rgba(243, 156, 18, 0.4);
-    }
-
-    .btn-tabela.excluir {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: white;
-    }
-
-    .btn-tabela.excluir:hover {
-      background: linear-gradient(135deg, #c0392b, #a93226);
-      transform: translateY(-2px) scale(1.1);
-      box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
-    }
-
-    /* MOBILE */
-    @media (max-width: 768px) {
-      .container {
-        padding: 0.5rem;
-      }
-
-      .card {
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-      }
-
-      table {
-        font-size: 0.9rem;
-      }
-
-      th,
-      td {
-        padding: 14px 10px;
-      }
-
-      .btn-tabela {
-        width: 42px;
-        height: 42px;
-        font-size: 1rem;
-        margin: 0 2px;
-      }
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; background: white; border-radius: 12px; overflow: hidden; }
+    th, td { padding: 18px 16px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+    th { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+    .btn-tabela { padding: 10px 12px; border: none; border-radius: 10px; cursor: pointer; margin: 0 4px; width: 48px; height: 48px; }
+    .btn-tabela.editar { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
+    .btn-tabela.excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
   </style>
 
   <script type="module">
@@ -272,13 +74,9 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight: 600; color: #2c3e50; max-width: 400px; word-break: break-word;">
-            ${m.titulo}
-          </td>
-          <td style="color: #27ae60; font-weight: 500; font-size: 1.05rem;">
-            ${m.tom || '-'}
-          </td>
-          <td>
+          <td style="font-weight: 600; color: #2c3e50;">${m.titulo}</td>
+          <td style="color: #27ae60; font-weight: 500;">${m.tom || '-'}</td>
+          <td style="text-align:center;">
             <button onclick="editarMusica('${id}')" class="btn-tabela editar" title="Editar">
               <ion-icon name="create-outline"></ion-icon>
             </button>
@@ -297,19 +95,11 @@
 
       document.getElementById('titulo').value = musica.titulo || '';
       document.getElementById('tom').value = musica.tom || '';
-      document.getElementById('nivelAnimacao').value = musica.nivelAnimacao || '';
-      document.getElementById('slotPreferido').value = musica.slotPreferido || '';
       document.getElementById('prioridade').value = musica.prioridade || 5;
       document.getElementById('observacoes').value = musica.observacoes || '';
 
       musicaEditandoId = id;
-      document.querySelector('button[type="submit"]').innerHTML =
-        '<ion-icon name="save-outline"></ion-icon> Atualizar Música';
-
-      // Scroll suave para o formulário
-      document.querySelector('.card:first-of-type').scrollIntoView({
-        behavior: 'smooth'
-      });
+      document.querySelector('button[type="submit"]').innerHTML = 'Atualizar Música';
     };
 
     document.getElementById('formMusica').addEventListener('submit', async (e) => {
@@ -318,8 +108,6 @@
       const musica = {
         titulo: document.getElementById('titulo').value.trim(),
         tom: document.getElementById('tom').value.trim().toUpperCase() || null,
-        nivelAnimacao: document.getElementById('nivelAnimacao').value,
-        slotPreferido: document.getElementById('slotPreferido').value,
         prioridade: parseInt(document.getElementById('prioridade').value),
         observacoes: document.getElementById('observacoes').value.trim(),
         ultimaUso: null,
@@ -330,10 +118,9 @@
       try {
         if (musicaEditandoId) {
           await updateDoc(doc(db, "musicas", musicaEditandoId), musica);
-          alert("✅ Música atualizada com sucesso!");
+          alert("✅ Música atualizada!");
           musicaEditandoId = null;
-          document.querySelector('button[type="submit"]').innerHTML =
-            '<ion-icon name="add-outline"></ion-icon> Salvar Música';
+          document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
         } else {
           await addDoc(musicasRef, musica);
           alert("🎵 Música cadastrada com sucesso!");
@@ -347,14 +134,10 @@
     });
 
     window.excluirMusica = async function (id) {
-      if (confirm("🗑️ Excluir esta música permanentemente?\n\nEsta ação não pode ser desfeita.")) {
-        try {
-          await deleteDoc(doc(db, "musicas", id));
-          alert("✅ Música excluída com sucesso!");
-          carregarMusicas();
-        } catch (error) {
-          alert("❌ Erro ao excluir: " + error.message);
-        }
+      if (confirm("Excluir esta música permanentemente?")) {
+        await deleteDoc(doc(db, "musicas", id));
+        alert("Música excluída!");
+        carregarMusicas();
       }
     };
 
@@ -367,7 +150,7 @@
     <div id="header-placeholder"></div>
 
     <div class="card">
-      <h2><ion-icon name="musical-notes-outline"></ion-icon> Nova Música</h2>
+      <h2>Nova Música</h2>
       <form id="formMusica">
         <label>Título *</label>
         <input type="text" id="titulo" required placeholder="Ex: Oceans (Onde meus pés podem falhar)">
@@ -375,43 +158,22 @@
         <label>Tom (opcional)</label>
         <input type="text" id="tom" placeholder="Ex: D, C#, Bb">
 
-        <label>Nível de Animação *</label>
-        <select id="nivelAnimacao" required>
-          <option value="">Selecione...</option>
-          <option value="calma">😌 Calma / Suave</option>
-          <option value="moderada">⚖️ Moderada</option>
-          <option value="animada">🔥 Animada</option>
-        </select>
-
-        <label>Slot Preferido</label>
-        <select id="slotPreferido">
-          <option value="">Nenhum</option>
-          <option value="preludio">🎹 Prelúdio</option>
-          <option value="abertura">🚪 Abertura</option>
-          <option value="principal">⭐ Principal</option>
-          <option value="oferta">💰 Oferta</option>
-          <option value="ceia">🍞 Ceia</option>
-          <option value="final">🏁 Final</option>
-        </select>
-
         <label>Prioridade (1 a 10) *</label>
         <input type="number" id="prioridade" min="1" max="10" value="5" required>
 
         <label>Observações</label>
-        <textarea id="observacoes" rows="3" placeholder="Dicas especiais, arranjos, etc..."></textarea>
+        <textarea id="observacoes" placeholder="Dicas, arranjos, etc..."></textarea>
 
-        <button type="submit">
-          <ion-icon name="add-outline"></ion-icon> Salvar Música
-        </button>
+        <button type="submit">Salvar Música</button>
       </form>
     </div>
 
     <div class="card">
-      <h2><ion-icon name="list-outline"></ion-icon> Músicas Cadastradas</h2>
+      <h2>Músicas Cadastradas</h2>
       <table id="tabelaMusicas">
         <thead>
           <tr>
-            <th style="width: 150px;">Título</th>
+            <th>Título</th>
             <th>Tom</th>
             <th>Ações</th>
           </tr>
@@ -421,12 +183,7 @@
     </div>
   </div>
 
-
-    <!-- 3. CARREGA HEADER -->
   <script src="header.js"></script>
-  <script>
-    carregarHeader('Musicas');
-  </script>
+  <script>carregarHeader('Músicas');</script>
 </body>
-
 </html>

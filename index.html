@@ -31,18 +31,6 @@
       }
     }
 
-    // Retorna cor para o badge .tipo-culto
-    function getTipoCultoColor(tipo) {
-      const t = (tipo || "").toLowerCase().trim();
-      
-      if (t.includes("louvor") || t.includes("pregação")) return "#f3707099";   // Vermelho
-      if (t.includes("oração") || t.includes("doutrina")) return "#56cff799";   // Verde
-      if (t.includes("ebd")) return "#3498db99";                                // Azul
-      if (t.includes("evento")) return "#9b59b699";                             // Roxo
-      if (t.includes("especial")) return "#f39c1299";                           // Laranja/Dourado
-      return "#34495e99";                                                       // Cor padrão (cinza escuro)
-    }
-
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
       feed.innerHTML = '<p class="loading">Carregando próximas escalas...</p>';
@@ -85,48 +73,8 @@
 
           encontrouFutura = true;
 
-          const dataFormatada = dataEscala.toLocaleDateString('pt-BR', {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short'
-          });
-
-          const corBadge = getTipoCultoColor(escala.tipoCulto);
-
-          const card = document.createElement('div');
-          card.className = 'escala-card';
-
-          if (usuarioLogado) {
-            card.style.cursor = 'pointer';
-            card.onclick = () => window.location.href = `editar-escala.html?id=${escala.id}`;
-          }
-
-          card.innerHTML = `
-            <div class="card-header">
-              <span class="tipo-culto" style="background: ${corBadge};">${escala.tipoCulto}</span>
-              <span class="data">${dataFormatada}</span>
-            </div>
-
-            <div class="musicas">
-              ${escala.musicas.map(m => `
-                <div class="musica-item">
-                  ${m.titulo} ${m.tom ? `<span class="tom">(${m.tom})</span>` : ''}
-                </div>
-              `).join('')}
-            </div>
-
-            <div class="equipe">
-              <div class="membros">
-                ${escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('')}
-              </div>
-            </div>
-
-            ${escala.observacoes ? `
-              <div class="observacoes">
-                <strong>Obs.:</strong> ${escala.observacoes}
-              </div>` : ''}
-          `;
-
+          // Usando o card unificado
+          const card = criarEscalaCard(escala, usuarioLogado);
           feed.appendChild(card);
         });
 
@@ -291,5 +239,8 @@
   <div class="container">
     <div id="feed"></div>
   </div>
+
+  <!-- Componente de Card Unificado -->
+  <script src="escala-card.js"></script>
 </body>
 </html>

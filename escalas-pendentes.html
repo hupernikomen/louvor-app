@@ -52,7 +52,7 @@
       box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
     }
 
-    .escala-pendente {
+    .escala-card {
       background: white;
       border-radius: 16px;
       padding: 1rem 2rem;
@@ -60,7 +60,7 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
 
-    .pendente-header {
+    .card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -69,11 +69,20 @@
       gap: 10px;
     }
 
-    .pendente-header h3 {
+    .card-header h3 {
       font-size: 1.10rem;
       font-weight: 600;
+      margin: 0;
     }
 
+    .musicas {
+      margin-bottom: 1rem;
+    }
+
+    .musica-item {
+      font-size: 0.95rem;
+      padding: 6px 0;
+    }
 
     .equipe-pendente {
       margin-top: 1rem;
@@ -107,7 +116,7 @@
       font-size: 0.8rem;
       background: #28a74599;
       color: white;
-      padding: 10px 10px;
+      padding: 10px 18px;
       border: none;
       border-radius: 8px;
       font-weight: 600;
@@ -118,7 +127,7 @@
       font-size: 0.8rem;
       background: #ffc10799;
       color: #212529;
-      padding: 10px 10px;
+      padding: 10px 18px;
       border: none;
       border-radius: 8px;
       font-weight: 600;
@@ -169,7 +178,6 @@
       return Math.round((diasDesdeUltima * 10) + (500 / (vezesUsada + 1)));
     }
 
-    // ====================== NOVA INTELIGÊNCIA: POSIÇÃO POR TIPO DE CULTO ======================
     async function gerarProximaSugestao() {
       const pendentesSnap = await getDocs(collection(db, "escalasPendentes"));
       if (!pendentesSnap.empty) return;
@@ -202,8 +210,7 @@
 
         const tipoAtual = cultoMatch.nome.toLowerCase().trim();
 
-        // === ANÁLISE DE POSIÇÃO POR TIPO DE CULTO ===
-        const posicaoPorTipo = new Map(); // título -> posição mais frequente
+        const posicaoPorTipo = new Map();
 
         escalasAprovadas.forEach(escala => {
           if (escala.tipoCulto && escala.tipoCulto.toLowerCase().trim() === tipoAtual && escala.musicas) {
@@ -217,7 +224,6 @@
           }
         });
 
-        // Monta sugestão respeitando posições preferidas
         let musicasSelecionadas = new Array(cultoMatch.numMusicas).fill(null);
 
         todasMusicas.forEach(musica => {
@@ -239,7 +245,6 @@
           }
         });
 
-        // Preenche posições restantes com score normal
         const restantes = musicasSelecionadas.map((m, idx) => m ? null : idx).filter(idx => idx !== null);
 
         if (restantes.length > 0) {
@@ -258,7 +263,6 @@
           });
         }
 
-        // Regra especial para Oração e Doutrina (mantida)
         if (tipoAtual.includes("oração") || tipoAtual.includes("doutrina")) {
           if (ultimaEscala && ultimaEscala.musicas && ultimaEscala.musicas.length >= 2) {
             const anteriores = ultimaEscala.musicas;
@@ -286,7 +290,7 @@
         };
 
         await addDoc(collection(db, "escalasPendentes"), novaEscala);
-        console.log(`✅ Sugestão gerada com padrão posicional por tipo: ${dataStr} - ${cultoMatch.nome}`);
+        console.log(`✅ Sugestão gerada: ${dataStr} - ${cultoMatch.nome}`);
         break;
       }
     }
@@ -309,47 +313,13 @@
 
       container.innerHTML = '';
       pendentes.forEach(escala => {
-        let dataFormatada = 'Data não definida';
-
-        if (escala.data) {
-          const [ano, mes, dia] = escala.data.split('-').map(Number);
-          const dataCorreta = new Date(ano, mes - 1, dia);
-
-          dataFormatada = dataCorreta.toLocaleDateString('pt-BR', {
-            weekday: 'short',
-            day: '2-digit',
-            month: 'short'
-          });
-        }
-
-        const card = document.createElement('div');
-        card.className = 'escala-pendente';
-        card.innerHTML = `
-          <div class="pendente-header">
-            <h3>${escala.tipoCulto} - ${dataFormatada}</h3>
-
-          </div>
-
-          <div class="musicas">
-            ${escala.musicas && escala.musicas.length > 0 ?
-            escala.musicas.map(m => `
-                <div class="musica-item">${m.titulo} ${m.tom ? `(${m.tom})` : ''}</div>
-              `).join('') :
-            '<p style="color:#999; font-style:italic;">Nenhuma música ainda</p>'}
-          </div>
-
-          <div class="equipe-pendente">
-            <div class="membros">
-              ${escala.equipe && escala.equipe.length > 0 ?
-            escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('') :
-            '<span style="color:#999;">Nenhum membro definido</span>'}
-            </div>
-            </div>
-            <div class="btn-group">
-  <button onclick="aprovarEscala('${escala.id}')" class="btn-aprovar">APROVAR</button>
-  <button onclick="editarEscala('${escala.id}')" class="btn-editar">EDITAR</button>
-</div>
-        `;
+        // Usando o card unificado com botões
+        const card = criarEscalaCard(
+          escala,
+          false,
+          `aprovarEscala('${escala.id}')`,
+          `editarEscala('${escala.id}')`
+        );
         container.appendChild(card);
       });
     }
@@ -413,7 +383,7 @@
   </div>
 
   <script src="header.js"></script>
+  <script src="escala-card.js"></script>
   <script>carregarHeader('Pendentes');</script>
 </body>
-
 </html>

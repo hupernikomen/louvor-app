@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,12 @@
   <title>Escalas Pendentes - Aprovar</title>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f8f9fa;
@@ -17,8 +23,12 @@
       line-height: 1.6;
       min-height: 100vh;
     }
-    .container { max-width: 1000px; margin: 0 auto; padding: .5rem; }
-    
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: .5rem;
+    }
 
     .btn-nova {
       background: linear-gradient(135deg, #6f42c1, #8e5cf7);
@@ -35,8 +45,8 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3);
     }
+
     .btn-nova:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 25px rgba(111, 66, 193, 0.4);
@@ -47,7 +57,7 @@
       border-radius: 16px;
       padding: 2rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
 
     .pendente-header {
@@ -60,10 +70,33 @@
     }
 
     .musica-item {
-      padding: 8px 0;
       border-bottom: 1px solid #f1f3f4;
     }
-    .musica-item:last-child { border-bottom: none; }
+
+    .musica-item:last-child {
+      border-bottom: none;
+    }
+
+    .equipe-pendente {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+
+    .membros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .membro-tag {
+      background: #f1f5f9;
+      color: #334155;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
 
     .btn-group {
       display: flex;
@@ -80,6 +113,7 @@
       font-weight: 600;
       cursor: pointer;
     }
+
     .btn-editar {
       background: #ffc107;
       color: #212529;
@@ -90,7 +124,8 @@
       cursor: pointer;
     }
 
-    .loading, .info {
+    .loading,
+    .info {
       text-align: center;
       padding: 4rem 2rem;
       color: #666;
@@ -104,9 +139,6 @@
       collection, getDocs, doc, addDoc, getDoc, deleteDoc, updateDoc, query, where
     } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-    const MIN_ESCALAS_HISTORICO = 10;
-    const DIAS_DE_ANALISE = 15;
 
     let todasMusicas = [];
     let escalasAprovadas = [];
@@ -125,12 +157,10 @@
       escalasAprovadas = aprovSnap.docs.map(d => d.data());
     }
 
-    // ====================== NOVA ESCALA MANUAL (sem criar ainda) ======================
     window.criarNovaEscalaManual = function () {
       window.location.href = `editar-escala.html?nova=true`;
     };
 
-    // ====================== INTELIGÊNCIA DE SCORE ======================
     function calcularScoreMusica(musica) {
       const ultimaUso = musica.ultimaUso ? new Date(musica.ultimaUso) : new Date(0);
       const diasDesdeUltima = Math.floor((Date.now() - ultimaUso) / 86400000);
@@ -138,18 +168,25 @@
       return Math.round((diasDesdeUltima * 10) + (500 / (vezesUsada + 1)));
     }
 
-    async function gerarEscalasAutomaticas() {
-      if (escalasAprovadas.length < MIN_ESCALAS_HISTORICO) return;
+    async function gerarProximaSugestao() {
+      const pendentesSnap = await getDocs(collection(db, "escalasPendentes"));
+      if (!pendentesSnap.empty) return;
+
+      let ultimaEscala = null;
+      if (escalasAprovadas.length > 0) {
+        escalasAprovadas.sort((a, b) => new Date(b.data) - new Date(a.data));
+        ultimaEscala = escalasAprovadas[0];
+      }
+
+      let ultimaData = ultimaEscala ? new Date(ultimaEscala.data) : new Date();
+      ultimaData.setHours(0, 0, 0, 0);
 
       const cultosSnap = await getDocs(collection(db, "cultosFixos"));
       const cultosFixos = cultosSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-
-      for (let i = 1; i <= DIAS_DE_ANALISE; i++) {
-        const dataFuturo = new Date(hoje);
-        dataFuturo.setDate(hoje.getDate() + i);
+      for (let i = 1; i <= 60; i++) {
+        const dataFuturo = new Date(ultimaData);
+        dataFuturo.setDate(ultimaData.getDate() + i);
         const dataStr = dataFuturo.toISOString().split('T')[0];
         const diaSemana = dataFuturo.getDay();
 
@@ -161,12 +198,33 @@
         const cultoMatch = cultosFixos.find(c => c.diaSemana === diaSemana);
         if (!cultoMatch) continue;
 
-        const musicasComScore = todasMusicas.map(m => ({
-          ...m,
-          score: calcularScoreMusica(m)
-        })).sort((a, b) => b.score - a.score);
+        let musicasSelecionadas = [];
 
-        const musicasSelecionadas = musicasComScore.slice(0, cultoMatch.numMusicas);
+        if (cultoMatch.nome.toLowerCase().includes("oração") || cultoMatch.nome.toLowerCase().includes("doutrina")) {
+          if (ultimaEscala && ultimaEscala.musicas && ultimaEscala.musicas.length >= 2) {
+            const anteriores = ultimaEscala.musicas;
+
+            const primeiraParte = anteriores.slice(0, 2);
+            const musica1 = primeiraParte[Math.floor(Math.random() * primeiraParte.length)];
+
+            const ultimaParte = anteriores.slice(-2);
+            const musica2 = ultimaParte[Math.floor(Math.random() * ultimaParte.length)];
+
+            musicasSelecionadas = [musica1, musica2];
+          }
+        }
+
+        if (musicasSelecionadas.length < cultoMatch.numMusicas) {
+          const restantes = cultoMatch.numMusicas - musicasSelecionadas.length;
+
+          const musicasComScore = todasMusicas
+            .filter(m => !musicasSelecionadas.some(sel => sel.titulo === m.titulo))
+            .map(m => ({ ...m, score: calcularScoreMusica(m) }))
+            .sort((a, b) => b.score - a.score);
+
+          const complementares = musicasComScore.slice(0, restantes);
+          musicasSelecionadas = [...musicasSelecionadas, ...complementares];
+        }
 
         const membrosSnap = await getDocs(collection(db, "membrosEquipe"));
         const equipe = membrosSnap.docs.slice(0, 10).map(d => ({
@@ -185,6 +243,8 @@
         };
 
         await addDoc(collection(db, "escalasPendentes"), novaEscala);
+        console.log(`✅ Sugestão gerada: ${dataStr} - ${cultoMatch.nome}`);
+        break;
       }
     }
 
@@ -195,9 +255,7 @@
       const snapshot = await getDocs(collection(db, "escalasPendentes"));
       let pendentes = [];
 
-      snapshot.forEach(doc => {
-        pendentes.push({ id: doc.id, ...doc.data() });
-      });
+      snapshot.forEach(doc => pendentes.push({ id: doc.id, ...doc.data() }));
 
       pendentes.sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
 
@@ -208,29 +266,51 @@
 
       container.innerHTML = '';
       pendentes.forEach(escala => {
+        let dataFormatada = 'Data não definida';
+
+        if (escala.data) {
+          const [ano, mes, dia] = escala.data.split('-').map(Number);
+          const dataCorreta = new Date(ano, mes - 1, dia);
+
+          dataFormatada = dataCorreta.toLocaleDateString('pt-BR', {
+            weekday: 'short',
+            day: '2-digit',
+            month: 'short'
+          });
+        }
+
         const card = document.createElement('div');
         card.className = 'escala-pendente';
         card.innerHTML = `
           <div class="pendente-header">
-            <h3>${escala.data ? new Date(escala.data).toLocaleDateString('pt-BR') : 'Data não definida'} — ${escala.tipoCulto}</h3>
+            <h3>${dataFormatada} — ${escala.tipoCulto}</h3>
             <div class="btn-group">
               <button onclick="aprovarEscala('${escala.id}')" class="btn-aprovar">APROVAR</button>
               <button onclick="editarEscala('${escala.id}')" class="btn-editar">EDITAR</button>
             </div>
           </div>
-          <div>
-            ${escala.musicas && escala.musicas.length > 0 ? 
-              escala.musicas.map(m => `
+
+          <div class="musicas">
+            ${escala.musicas && escala.musicas.length > 0 ?
+            escala.musicas.map(m => `
                 <div class="musica-item">${m.titulo} ${m.tom ? `(${m.tom})` : ''}</div>
-              `).join('') : 
-              '<p style="color:#999; font-style:italic;">Nenhuma música ainda</p>'}
+              `).join('') :
+            '<p style="color:#999; font-style:italic;">Nenhuma música ainda</p>'}
+          </div>
+
+          <div class="equipe-pendente">
+            <div class="membros">
+              ${escala.equipe && escala.equipe.length > 0 ?
+                escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('') :
+                '<span style="color:#999;">Nenhum membro definido</span>'}
+            </div>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    window.aprovarEscala = async function(id) {
+    window.aprovarEscala = async function (id) {
       if (!confirm('Aprovar esta escala e publicá-la?')) return;
 
       const escalaRef = doc(db, "escalasPendentes", id);
@@ -256,21 +336,28 @@
       });
 
       await deleteDoc(escalaRef);
+
       alert("✅ Escala aprovada e publicada!");
-      location.reload();
+
+      // Recarrega a lista de escalas aprovadas antes de gerar a próxima sugestão
+      await carregarDadosBase();
+
+      await gerarProximaSugestao();
+      carregarEscalasPendentes();
     };
 
-    window.editarEscala = function(id) {
+    window.editarEscala = function (id) {
       window.location.href = `editar-escala.html?id=${id}`;
     };
 
     window.onload = async () => {
       await carregarDadosBase();
-      await gerarEscalasAutomaticas();
+      await gerarProximaSugestao();
       await carregarEscalasPendentes();
     };
   </script>
 </head>
+
 <body>
   <div class="container">
     <div id="header-placeholder"></div>
@@ -286,4 +373,5 @@
   <script src="header.js"></script>
   <script>carregarHeader('Pendentes');</script>
 </body>
+
 </html>

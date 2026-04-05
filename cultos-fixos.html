@@ -15,7 +15,7 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #f8f9fa; color: #333; line-height: 1.6; min-height: 100vh;
     }
-    .container { max-width: 1000px; margin: 0 auto; }
+       .container { max-width: 1000px; margin: 0 auto; padding: .5rem; }
     .header {
       position: sticky; background: white; padding: 16px 20px; top: 0;
       display: flex; justify-content: space-between; align-items: center;
@@ -28,7 +28,7 @@
     }
     .card {
       background: white; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-      padding: 2rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
+      padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
     }
     .card h2 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.4rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; }
     form { display: grid; gap: 1.25rem; }
@@ -71,7 +71,7 @@
       tbody.innerHTML = '';
       const snapshot = await getDocs(cultosRef);
 
-      const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
 
       snapshot.forEach(docSnap => {
         const culto = docSnap.data();
@@ -81,7 +81,6 @@
         tr.innerHTML = `
           <td style="font-weight: 600;">${dias[culto.diaSemana]}</td>
           <td style="font-weight: 600; color: #2c3e50;">${culto.nome}</td>
-          <td style="text-align:center; font-weight: 700; color: #27ae60;">${culto.numMusicas} músicas</td>
           <td>
             <button onclick="editarCulto('${id}')" style="background:#f39c12; color:white; padding:8px 16px; border:none; border-radius:8px; margin-right:8px;">Editar</button>
             <button onclick="excluirCulto('${id}')" style="background:#e74c3c; color:white; padding:8px 16px; border:none; border-radius:8px;">Excluir</button>
@@ -191,14 +190,7 @@
     <div class="card">
       <h2>Cultos Cadastrados</h2>
       <table id="tabelaCultos">
-        <thead>
-          <tr>
-            <th>Dia</th>
-            <th>Nome</th>
-            <th>Músicas</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
+
         <tbody></tbody>
       </table>
     </div>

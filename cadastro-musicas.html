@@ -31,7 +31,6 @@
       padding: .5rem;
     }
 
-
     .card {
       background: white;
       border-radius: 16px;
@@ -55,14 +54,6 @@
     }
 
 
-
-    label {
-      font-weight: 600;
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      display: block;
-    }
-
     input,
     textarea {
       width: 100%;
@@ -70,7 +61,7 @@
       border: none;
       border-radius: 10px;
       font-size: 16px;
-      background-color: #f8f8f8;
+      background: #f9f9f9;
     }
 
     input:focus,
@@ -100,11 +91,11 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1.5rem;
       background: white;
       border-radius: 12px;
       overflow: hidden;
     }
+    
 
     th,
     td {
@@ -121,13 +112,11 @@
     }
 
     .btn-tabela {
-      padding: 10px 12px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      margin: 0 4px;
       width: 48px;
-      height: 48px;
+      height: 30px;
     }
 
     .btn-tabela.editar {
@@ -135,9 +124,15 @@
       color: white;
     }
 
-    .btn-tabela.excluir {
+    .btn-excluir {
       background: linear-gradient(135deg, #e74c3c, #c0392b);
       color: white;
+      padding: 16px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
     }
   </style>
 
@@ -153,29 +148,23 @@
       tbody.innerHTML = '';
 
       const snapshot = await getDocs(musicasRef);
-
-      // Converte para array e ordena alfabeticamente pelo título
       let musicas = [];
       snapshot.forEach((docSnap) => {
         musicas.push({ id: docSnap.id, ...docSnap.data() });
       });
 
-      // Ordenação alfabética (ignorando maiúsculas/minúsculas)
+      // Ordenação alfabética
       musicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
 
       musicas.forEach((m) => {
         const id = m.id;
-
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td style="font-weight: 600; color: #2c3e50;">${m.titulo}</td>
+          <td style="font-weight: 400; color: #2c3e50;">${m.titulo}</td>
           <td style="color: #27ae60; font-weight: 500;">${m.tom || '-'}</td>
           <td style="text-align:center;">
             <button onclick="editarMusica('${id}')" class="btn-tabela editar" title="Editar">
               <ion-icon name="create-outline"></ion-icon>
-            </button>
-            <button onclick="excluirMusica('${id}')" class="btn-tabela excluir" title="Excluir">
-              <ion-icon name="trash-outline"></ion-icon>
             </button>
           </td>
         `;
@@ -194,6 +183,9 @@
 
       musicaEditandoId = id;
       document.querySelector('button[type="submit"]').innerHTML = 'Atualizar Música';
+
+      // Mostra o botão de excluir apenas ao editar
+      document.getElementById('btn-excluir').style.display = 'block';
     };
 
     document.getElementById('formMusica').addEventListener('submit', async (e) => {
@@ -215,24 +207,32 @@
           alert("✅ Música atualizada!");
           musicaEditandoId = null;
           document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
+          document.getElementById('btn-excluir').style.display = 'none';
         } else {
           await addDoc(musicasRef, musica);
-          alert("🎵 Música cadastrada com sucesso!");
+          alert("Música cadastrada com sucesso!");
         }
 
         e.target.reset();
-        carregarMusicas();   // Recarrega a lista já ordenada
+        carregarMusicas();
       } catch (error) {
         alert("❌ Erro: " + error.message);
       }
     });
 
-    window.excluirMusica = async function (id) {
-      if (confirm("Excluir esta música permanentemente?")) {
-        await deleteDoc(doc(db, "musicas", id));
-        alert("Música excluída!");
-        carregarMusicas();
-      }
+    window.excluirMusica = async function () {
+      if (!musicaEditandoId) return;
+      if (!confirm("Excluir esta música permanentemente?")) return;
+
+      await deleteDoc(doc(db, "musicas", musicaEditandoId));
+      alert("Música excluída!");
+
+      musicaEditandoId = null;
+      document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
+      document.getElementById('btn-excluir').style.display = 'none';
+
+      document.getElementById('formMusica').reset();
+      carregarMusicas();
     };
 
     window.onload = carregarMusicas;
@@ -245,24 +245,31 @@
 
     <div class="card">
       <form id="formMusica">
-
         <input type="text" id="titulo" required placeholder="Título">
+
         <input type="text" id="tom" placeholder="Ex: D, C#, Bb">
+
+        <input type="number" id="prioridade" min="1" max="10" placeholder="Prioridade (1 a 10) " required>
+
         <textarea id="observacoes" placeholder="Dicas, arranjos, etc..."></textarea>
+
         <button type="submit">Salvar Música</button>
-
+        <button type="button" id="btn-excluir" class="btn-excluir" onclick="excluirMusica()" style="display:none;">
+          Excluir Música
+        </button>
       </form>
-
-      <div class="card">
-        <table id="tabelaMusicas">
-
-          <tbody></tbody>
-        </table>
-      </div>
     </div>
 
-    <script src="header.js"></script>
-    <script>carregarHeader('Músicas');</script>
+    <div class="card">
+      <table id="tabelaMusicas">
+
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="header.js"></script>
+  <script>carregarHeader('Músicas');</script>
 </body>
 
 </html>

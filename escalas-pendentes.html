@@ -55,7 +55,7 @@
     .escala-pendente {
       background: white;
       border-radius: 16px;
-      padding: 2rem;
+      padding: 1rem 2rem;
       margin-bottom: 1.5rem;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
@@ -69,13 +69,11 @@
       gap: 10px;
     }
 
-    .musica-item {
-      border-bottom: 1px solid #f1f3f4;
+    .pendente-header h3 {
+      font-size: 1.10rem;
+      font-weight: 600;
     }
 
-    .musica-item:last-child {
-      border-bottom: none;
-    }
 
     .equipe-pendente {
       margin-top: 1rem;
@@ -102,12 +100,14 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-top: 20px;
     }
 
     .btn-aprovar {
-      background: #28a745;
+      font-size: 0.8rem;
+      background: #28a74599;
       color: white;
-      padding: 12px 20px;
+      padding: 10px 10px;
       border: none;
       border-radius: 8px;
       font-weight: 600;
@@ -115,9 +115,10 @@
     }
 
     .btn-editar {
-      background: #ffc107;
+      font-size: 0.8rem;
+      background: #ffc10799;
       color: #212529;
-      padding: 12px 20px;
+      padding: 10px 10px;
       border: none;
       border-radius: 8px;
       font-weight: 600;
@@ -168,6 +169,7 @@
       return Math.round((diasDesdeUltima * 10) + (500 / (vezesUsada + 1)));
     }
 
+    // ====================== NOVA INTELIGÊNCIA: POSIÇÃO POR TIPO DE CULTO ======================
     async function gerarProximaSugestao() {
       const pendentesSnap = await getDocs(collection(db, "escalasPendentes"));
       if (!pendentesSnap.empty) return;
@@ -198,32 +200,73 @@
         const cultoMatch = cultosFixos.find(c => c.diaSemana === diaSemana);
         if (!cultoMatch) continue;
 
-        let musicasSelecionadas = [];
+        const tipoAtual = cultoMatch.nome.toLowerCase().trim();
 
-        if (cultoMatch.nome.toLowerCase().includes("oração") || cultoMatch.nome.toLowerCase().includes("doutrina")) {
-          if (ultimaEscala && ultimaEscala.musicas && ultimaEscala.musicas.length >= 2) {
-            const anteriores = ultimaEscala.musicas;
+        // === ANÁLISE DE POSIÇÃO POR TIPO DE CULTO ===
+        const posicaoPorTipo = new Map(); // título -> posição mais frequente
 
-            const primeiraParte = anteriores.slice(0, 2);
-            const musica1 = primeiraParte[Math.floor(Math.random() * primeiraParte.length)];
-
-            const ultimaParte = anteriores.slice(-2);
-            const musica2 = ultimaParte[Math.floor(Math.random() * ultimaParte.length)];
-
-            musicasSelecionadas = [musica1, musica2];
+        escalasAprovadas.forEach(escala => {
+          if (escala.tipoCulto && escala.tipoCulto.toLowerCase().trim() === tipoAtual && escala.musicas) {
+            escala.musicas.forEach((musica, index) => {
+              const titulo = musica.titulo;
+              const pos = index + 1;
+              if (!posicaoPorTipo.has(titulo)) posicaoPorTipo.set(titulo, new Map());
+              const contagem = posicaoPorTipo.get(titulo);
+              contagem.set(pos, (contagem.get(pos) || 0) + 1);
+            });
           }
-        }
+        });
 
-        if (musicasSelecionadas.length < cultoMatch.numMusicas) {
-          const restantes = cultoMatch.numMusicas - musicasSelecionadas.length;
+        // Monta sugestão respeitando posições preferidas
+        let musicasSelecionadas = new Array(cultoMatch.numMusicas).fill(null);
 
+        todasMusicas.forEach(musica => {
+          const titulo = musica.titulo;
+          if (posicaoPorTipo.has(titulo)) {
+            const contagemPos = posicaoPorTipo.get(titulo);
+            let melhorPos = 1;
+            let maxCount = 0;
+            contagemPos.forEach((count, pos) => {
+              if (count > maxCount) {
+                maxCount = count;
+                melhorPos = pos;
+              }
+            });
+
+            if (melhorPos <= cultoMatch.numMusicas && !musicasSelecionadas[melhorPos - 1]) {
+              musicasSelecionadas[melhorPos - 1] = { titulo: musica.titulo, tom: musica.tom };
+            }
+          }
+        });
+
+        // Preenche posições restantes com score normal
+        const restantes = musicasSelecionadas.map((m, idx) => m ? null : idx).filter(idx => idx !== null);
+
+        if (restantes.length > 0) {
           const musicasComScore = todasMusicas
-            .filter(m => !musicasSelecionadas.some(sel => sel.titulo === m.titulo))
+            .filter(m => !musicasSelecionadas.some(sel => sel && sel.titulo === m.titulo))
             .map(m => ({ ...m, score: calcularScoreMusica(m) }))
             .sort((a, b) => b.score - a.score);
 
-          const complementares = musicasComScore.slice(0, restantes);
-          musicasSelecionadas = [...musicasSelecionadas, ...complementares];
+          restantes.forEach((pos, idx) => {
+            if (idx < musicasComScore.length) {
+              musicasSelecionadas[pos] = {
+                titulo: musicasComScore[idx].titulo,
+                tom: musicasComScore[idx].tom
+              };
+            }
+          });
+        }
+
+        // Regra especial para Oração e Doutrina (mantida)
+        if (tipoAtual.includes("oração") || tipoAtual.includes("doutrina")) {
+          if (ultimaEscala && ultimaEscala.musicas && ultimaEscala.musicas.length >= 2) {
+            const anteriores = ultimaEscala.musicas;
+            const musica1 = anteriores[0];
+            const musica2 = anteriores[anteriores.length - 1];
+            if (musica1) musicasSelecionadas[0] = { titulo: musica1.titulo, tom: musica1.tom };
+            if (musica2 && cultoMatch.numMusicas > 1) musicasSelecionadas[1] = { titulo: musica2.titulo, tom: musica2.tom };
+          }
         }
 
         const membrosSnap = await getDocs(collection(db, "membrosEquipe"));
@@ -236,14 +279,14 @@
           data: dataStr,
           tipoCulto: cultoMatch.nome,
           numMusicas: cultoMatch.numMusicas,
-          musicas: musicasSelecionadas.map(m => ({ titulo: m.titulo, tom: m.tom })),
+          musicas: musicasSelecionadas.filter(Boolean),
           equipe: equipe,
           status: "pendente",
           criadoEm: new Date().toISOString()
         };
 
         await addDoc(collection(db, "escalasPendentes"), novaEscala);
-        console.log(`✅ Sugestão gerada: ${dataStr} - ${cultoMatch.nome}`);
+        console.log(`✅ Sugestão gerada com padrão posicional por tipo: ${dataStr} - ${cultoMatch.nome}`);
         break;
       }
     }
@@ -283,11 +326,8 @@
         card.className = 'escala-pendente';
         card.innerHTML = `
           <div class="pendente-header">
-            <h3>${dataFormatada} — ${escala.tipoCulto}</h3>
-            <div class="btn-group">
-              <button onclick="aprovarEscala('${escala.id}')" class="btn-aprovar">APROVAR</button>
-              <button onclick="editarEscala('${escala.id}')" class="btn-editar">EDITAR</button>
-            </div>
+            <h3>${escala.tipoCulto} - ${dataFormatada}</h3>
+
           </div>
 
           <div class="musicas">
@@ -301,10 +341,14 @@
           <div class="equipe-pendente">
             <div class="membros">
               ${escala.equipe && escala.equipe.length > 0 ?
-                escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('') :
-                '<span style="color:#999;">Nenhum membro definido</span>'}
+            escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('') :
+            '<span style="color:#999;">Nenhum membro definido</span>'}
             </div>
-          </div>
+            </div>
+            <div class="btn-group">
+  <button onclick="aprovarEscala('${escala.id}')" class="btn-aprovar">APROVAR</button>
+  <button onclick="editarEscala('${escala.id}')" class="btn-editar">EDITAR</button>
+</div>
         `;
         container.appendChild(card);
       });
@@ -339,9 +383,7 @@
 
       alert("✅ Escala aprovada e publicada!");
 
-      // Recarrega a lista de escalas aprovadas antes de gerar a próxima sugestão
       await carregarDadosBase();
-
       await gerarProximaSugestao();
       carregarEscalasPendentes();
     };

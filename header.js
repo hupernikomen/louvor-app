@@ -2,36 +2,46 @@
 async function carregarHeader(titulo = 'Dashboard') {
   try {
     const response = await fetch('header.html');
-    const html = await response.text();
+    let html = await response.text();
     
-    // Insere o header
+    // Substitui o título dinamicamente
+    html = html.replace(/Dashboard/g, titulo);
+    
     const placeholder = document.getElementById('header-placeholder');
     if (placeholder) {
       placeholder.innerHTML = html;
     }
     
-    // Muda o título
-    const h1 = document.querySelector('[data-title]');
+    // Ajusta tamanho do título
+    const h1 = document.querySelector('h1[data-title]');
     if (h1) {
-      h1.textContent = titulo;
-      h1.setAttribute('data-title', titulo);
+      h1.style.fontSize = '1.35rem';
+      h1.style.fontWeight = '600';
+      h1.style.color = '#2c3e50';
+      h1.style.margin = '0';
     }
-    
+
   } catch (error) {
     console.error('Erro ao carregar header:', error);
     
-    // Fallback caso o header.html não carregue
+    // Fallback
     const placeholder = document.getElementById('header-placeholder');
     if (placeholder) {
       placeholder.innerHTML = `
         <header class="header">
-          <button onclick="history.back()" class="btn-voltar" title="Voltar">
-            <ion-icon name="arrow-back-outline"></ion-icon>
-          </button>
-          <h1>${titulo}</h1>
+          <div>
+            <button onclick="voltarParaFeed()" class="btn-voltar" title="Voltar para o Feed">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+            </button>
+          </div>
+          <h1 style="font-size: 1.35rem; font-weight: 600; color: #2c3e50;">${titulo}</h1>
           <div></div>
         </header>
       `;
     }
   }
 }
+
+window.voltarParaFeed = function() {
+  window.location.href = "index.html";
+};

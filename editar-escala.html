@@ -15,7 +15,7 @@
     let escalaId = null;
     let escalaAtual = null;
     let todasMusicas = [];
-    let equipeAtual = [];
+    let todosMembros = [];
     let cultosFixos = [];
     let isNovaEscala = false;
 
@@ -31,6 +31,14 @@
       isNovaEscala = params.get('nova') === 'true';
     }
 
+    async function carregarDados() {
+      await Promise.all([
+        carregarCultosFixos(),
+        carregarTodasMusicas(),
+        carregarTodosMembros()
+      ]);
+    }
+
     async function carregarCultosFixos() {
       const snapshot = await getDocs(collection(db, "cultosFixos"));
       cultosFixos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -41,16 +49,59 @@
       todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
-    function gerarOpcoesNumMusicas() {
-      const select = document.getElementById('numMusicas');
-      select.innerHTML = '<option value="">Selecione...</option>';
-      const numsUnicos = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a,b) => a-b);
-      numsUnicos.forEach(num => {
-        select.innerHTML += `<option value="${num}">${num} músicas</option>`;
-      });
+    async function carregarTodosMembros() {
+      const snapshot = await getDocs(collection(db, "membrosEquipe"));
+      todosMembros = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
-    function renderizarSelectsMusicas(numMusicas = 5) {
+    function preencherTipoCulto() {
+      const select = document.getElementById('tipoCulto');
+      select.innerHTML = '<option value="">Selecione o tipo de culto...</option>';
+      cultosFixos.forEach(culto => {
+        select.innerHTML += `<option value="${culto.nome}">${culto.nome}</option>`;
+      });
+      select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
+    }
+
+    function preencherNumMusicas() {
+      const select = document.getElementById('numMusicas');
+      select.innerHTML = '<option value="">Selecione a quantidade...</option>';
+      const nums = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a,b) => a-b);
+      nums.forEach(num => {
+        select.innerHTML += `<option value="${num}">${num} músicas</option>`;
+      });
+      select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
+    }
+
+    function handleTipoCultoChange() {
+      const valor = document.getElementById('tipoCulto').value;
+      const container = document.getElementById('personalizarTipoContainer');
+
+      if (valor === "personalizar") {
+        container.style.display = 'block';
+      } else {
+        container.style.display = 'none';
+        const culto = cultosFixos.find(c => c.nome === valor);
+        if (culto) {
+          document.getElementById('numMusicas').value = culto.numMusicas;
+          renderizarMusicas(culto.numMusicas);
+        }
+      }
+    }
+
+    function handleNumMusicasChange() {
+      const valor = document.getElementById('numMusicas').value;
+      const container = document.getElementById('personalizarNumContainer');
+
+      if (valor === "personalizar") {
+        container.style.display = 'block';
+      } else {
+        container.style.display = 'none';
+        renderizarMusicas(parseInt(valor) || 5);
+      }
+    }
+
+    function renderizarMusicas(numMusicas = 5) {
       const container = document.getElementById('musicasContainer');
       container.innerHTML = '';
 
@@ -59,7 +110,7 @@
         container.innerHTML += `
           <div class="musica-edit">
             <label><strong>${i + 1}ª Música</strong></label>
-            <select class="select-musica" data-index="${i}">
+            <select class="select-musica">
               <option value="">Selecione uma música...</option>
               ${todasMusicas.map(mus => `
                 <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
@@ -72,141 +123,125 @@
       }
     }
 
-    function renderizarEquipeSwitches() {
+    function renderizarEquipe() {
       const container = document.getElementById('equipeContainer');
-      if (!equipeAtual?.length) return;
+      container.innerHTML = '<h3 style="margin: 20px 0 10px 0;">Equipe de Louvor</h3>';
+
+      if (todosMembros.length === 0) {
+        container.innerHTML += '<p style="color:#999; font-style:italic;">Nenhum membro cadastrado ainda.</p>';
+        return;
+      }
 
       let html = '<div class="equipe-grid">';
-      equipeAtual.forEach((membro, index) => {
+      todosMembros.forEach((membro, index) => {
+        const estaSelecionado = escalaAtual?.equipe?.some(m => m.nome === membro.nome) || false;
         html += `
           <div class="membro-item">
-            <div class="membro-info">
+            <div>
               <div class="membro-nome">${membro.nome}</div>
               <div class="membro-funcao">${membro.funcao}</div>
             </div>
             <label class="switch-container">
-              <input type="checkbox" class="switch-input" data-index="${index}" ${membro.ativo !== false ? 'checked' : ''}>
+              <input type="checkbox" class="switch-input" data-index="${index}" ${estaSelecionado ? 'checked' : ''}>
               <span class="switch-toggle"></span>
             </label>
           </div>
         `;
       });
       html += '</div>';
-      container.innerHTML = html;
-    }
-
-    function onChangeNumMusicas() {
-      const num = parseInt(document.getElementById('numMusicas').value);
-      if (num) renderizarSelectsMusicas(num);
+      container.innerHTML += html;
     }
 
     async function carregarEscala() {
       getUrlParams();
+      await carregarDados();
 
-      await Promise.all([carregarCultosFixos(), carregarTodasMusicas()]);
-      gerarOpcoesNumMusicas();
+      preencherTipoCulto();
+      preencherNumMusicas();
 
       if (isNovaEscala) {
-        // Nova escala - valores iniciais vazios
-        escalaAtual = {
-          data: "",
-          tipoCulto: "Culto Personalizado",
-          numMusicas: 5,
-          musicas: [],
-          equipe: [],
-          observacoes: ""
-        };
-        equipeAtual = [];
+        escalaAtual = { data: "", tipoCulto: "", numMusicas: 5, musicas: [], equipe: [], observacoes: "" };
       } else if (escalaId) {
-        // Edição de escala existente
         let docRef = doc(db, "escalasPendentes", escalaId);
         let docSnap = await getDoc(docRef);
-
         if (!docSnap.exists()) {
           docRef = doc(db, "escalasCulto", escalaId);
           docSnap = await getDoc(docRef);
         }
-
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
-          equipeAtual = (escalaAtual.equipe || []).map(m => ({ ...m, ativo: m.ativo !== false }));
-        } else {
-          alert("Escala não encontrada!");
-          window.history.back();
-          return;
         }
       }
 
-      // Preenche os campos
+      // Preenche campos
       document.getElementById('data').value = escalaAtual.data || '';
       document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
-      
-      const numPadrao = escalaAtual.numMusicas || 5;
-      document.getElementById('numMusicas').value = numPadrao;
-      renderizarSelectsMusicas(numPadrao);
-
+      document.getElementById('numMusicas').value = escalaAtual.numMusicas || '';
       document.getElementById('observacoes').value = escalaAtual.observacoes || '';
-      renderizarEquipeSwitches();
+
+      renderizarMusicas(escalaAtual.numMusicas || 5);
+      renderizarEquipe();
     }
 
     window.salvarAlteracoes = async () => {
-      const numMusicas = parseInt(document.getElementById('numMusicas').value);
-      if (!numMusicas) return alert('Selecione o número de músicas!');
-
-      const novasMusicas = Array.from(document.querySelectorAll('.select-musica'))
-        .map(select => {
-          const musica = todasMusicas.find(m => m.id === select.value);
-          return musica ? { titulo: musica.titulo, tom: musica.tom } : null;
-        })
-        .filter(Boolean);
-
-      if (novasMusicas.length !== numMusicas) {
-        return alert('Você deve selecionar todas as músicas!');
+      let tipoCultoFinal = document.getElementById('tipoCulto').value;
+      if (tipoCultoFinal === "personalizar") {
+        tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
+        if (!tipoCultoFinal) return alert("Digite o nome do culto personalizado.");
       }
 
-      const equipeSalvar = equipeAtual
-        .filter(m => m.ativo)
+      let numMusicasFinal = parseInt(document.getElementById('numMusicas').value);
+      if (document.getElementById('numMusicas').value === "personalizar") {
+        numMusicasFinal = parseInt(document.getElementById('numMusicasPersonalizado').value);
+        if (!numMusicasFinal || numMusicasFinal < 1) return alert("Digite uma quantidade válida de músicas.");
+      }
+
+      const musicasSelecionadas = Array.from(document.querySelectorAll('.select-musica'))
+        .map(select => todasMusicas.find(m => m.id === select.value))
+        .filter(Boolean)
+        .map(m => ({ titulo: m.titulo, tom: m.tom }));
+
+      if (musicasSelecionadas.length !== numMusicasFinal) {
+        return alert(`Você deve selecionar exatamente ${numMusicasFinal} músicas.`);
+      }
+
+      const equipeSalvar = todosMembros
+        .filter((_, index) => {
+          const checkbox = document.querySelector(`.switch-input[data-index="${index}"]`);
+          return checkbox && checkbox.checked;
+        })
         .map(m => ({ nome: m.nome, funcao: m.funcao }));
 
       const dados = {
         data: document.getElementById('data').value,
-        tipoCulto: document.getElementById('tipoCulto').value || "Culto Personalizado",
-        numMusicas,
-        musicas: novasMusicas,
-        observacoes: document.getElementById('observacoes').value.trim(),
+        tipoCulto: tipoCultoFinal,
+        numMusicas: numMusicasFinal,
+        musicas: musicasSelecionadas,
         equipe: equipeSalvar,
+        observacoes: document.getElementById('observacoes').value.trim(),
         status: "pendente",
         criadoEm: new Date().toISOString()
       };
 
       try {
         if (isNovaEscala) {
-          // Cria nova escala
-          const docRef = await addDoc(collection(db, "escalasPendentes"), dados);
+          await addDoc(collection(db, "escalasPendentes"), dados);
           alert("✅ Nova escala criada com sucesso!");
-          window.location.href = "escalas-pendentes.html";
         } else if (escalaId) {
-          // Atualiza escala existente
           let docRef = doc(db, "escalasPendentes", escalaId);
-          let docSnap = await getDoc(docRef);
-          if (!docSnap.exists()) docRef = doc(db, "escalasCulto", escalaId);
-
+          if (!(await getDoc(docRef)).exists()) docRef = doc(db, "escalasCulto", escalaId);
           await updateDoc(docRef, dados);
           alert("✅ Escala atualizada com sucesso!");
-          window.location.href = "escalas-pendentes.html";
         }
+        window.location.href = "escalas-pendentes.html";
       } catch (e) {
         alert("Erro ao salvar: " + e.message);
       }
     };
 
     document.addEventListener('change', (e) => {
-      if (e.target.classList.contains('switch-input')) {
-        const index = parseInt(e.target.dataset.index);
-        equipeAtual[index].ativo = e.target.checked;
-      } else if (e.target.id === 'numMusicas') {
-        onChangeNumMusicas();
-      }
+      if (e.target.id === 'tipoCulto') handleTipoCultoChange();
+      if (e.target.id === 'numMusicas') handleNumMusicasChange();
     });
 
     window.onload = carregarEscala;
@@ -217,30 +252,25 @@
     body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; padding-bottom: 2rem; }
     .header { padding: 1rem 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
     .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; }
-    .card {
-      background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      padding: 2rem; margin-bottom: 1rem;
-    }
-    label { display: block; margin: 1.5rem 0 0.5rem 0; font-weight: 600; color: #4a5568; }
-    input, select, textarea {
-      width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem;
-    }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #4299e1; }
-    textarea { resize: vertical; min-height: 80px; }
+    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 2rem; }
+    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; color: #4a5568; }
+    input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; }
+    input:focus, select:focus, textarea:focus { border-color: #4299e1; outline: none; }
 
+    .personalizar-container { margin-top: 8px; display: none; }
     .equipe-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
-    .membro-item {
-      display: flex; justify-content: space-between; align-items: center;
+    .membro-item { 
+      display: flex; justify-content: space-between; align-items: center; 
       padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7;
     }
     .membro-nome { font-weight: 600; color: #2d3748; }
-    .membro-funcao { color: #718096; font-size: 0.85rem; }
+    .membro-funcao { color: #718096; font-size: 0.9rem; }
 
     .switch-container { position: relative; width: 50px; height: 26px; }
     .switch-input { opacity: 0; width: 0; height: 0; }
     .switch-toggle {
-      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-      background: #cbd5e0; border-radius: 26px; transition: 0.3s; cursor: pointer;
+      position: absolute; top:0; left:0; right:0; bottom:0;
+      background: #cbd5e0; border-radius: 26px; cursor: pointer;
     }
     .switch-toggle::before {
       content: ""; position: absolute; width: 20px; height: 20px;
@@ -250,9 +280,9 @@
     .switch-input:checked + .switch-toggle::before { transform: translateX(24px); }
 
     .musica-edit { margin-bottom: 1.5rem; }
-    button {
-      width: 100%; padding: 1rem; border: none; border-radius: 10px;
-      font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem;
+    button { 
+      width: 100%; padding: 1rem; border: none; border-radius: 10px; 
+      font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem;
     }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
@@ -270,19 +300,16 @@
       <input type="date" id="data">
 
       <label>Tipo de Culto</label>
-      <select id="tipoCulto">
-        <option value="louvor_e_pregação">Louvor e Pregação</option>
-        <option value="ebd">EBD</option>
-        <option value="oração_e_doutrina">Oração e Doutrina</option>
-        <option value="evento">Evento</option>
-        <option value="especial">Culto Especial</option>
-        <option value="Culto Personalizado">Culto Personalizado</option>
-      </select>
+      <select id="tipoCulto" onchange="handleTipoCultoChange()"></select>
+      <div id="personalizarTipoContainer" class="personalizar-container">
+        <input type="text" id="tipoCultoPersonalizado" placeholder="Digite o nome do culto">
+      </div>
 
-      <label>Nº de Músicas</label>
-      <select id="numMusicas" onchange="onChangeNumMusicas()">
-        <option value="">Selecione...</option>
-      </select>
+      <label>Número de Músicas</label>
+      <select id="numMusicas" onchange="handleNumMusicasChange()"></select>
+      <div id="personalizarNumContainer" class="personalizar-container">
+        <input type="number" id="numMusicasPersonalizado" min="1" max="10" placeholder="Quantidade de músicas">
+      </div>
 
       <div id="equipeContainer"></div>
 

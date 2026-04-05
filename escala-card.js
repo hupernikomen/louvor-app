@@ -1,5 +1,5 @@
 // ================================================
-// escala-card.js - Card unificado com aparência idêntica
+// escala-card.js - Versão otimizada para mobile
 // ================================================
 
 const escalaCardCSS = `
@@ -8,26 +8,28 @@ const escalaCardCSS = `
       background: white;
       border-radius: 16px;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-      margin-bottom: 35px;
+      margin-bottom: 25px;           /* menor no mobile */
       overflow: hidden;
       border: 1px solid #f0f0f0;
+      width: 100%;
     }
 
     .card-header {
       background: #f1f5f9;
-      padding: 12px 20px;
+      padding: 14px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #eee;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
-    /* Estilo padrão do index.html */
     .tipo-culto {
-      padding: 4px 10px;
+      padding: 5px 11px;
       border-radius: 20px;
-      font-size: 0.80rem;
-      font-weight: 500;
+      font-size: 0.78rem;
+      font-weight: 600;
       text-transform: uppercase;
       color: white;
     }
@@ -35,18 +37,18 @@ const escalaCardCSS = `
     .data {
       font-weight: 500;
       color: #2c3e50;
-      font-size: 0.90rem;
+      font-size: 0.88rem;
     }
 
     .musicas {
-      padding: 16px 20px;
+      padding: 16px 18px;
     }
 
     .musica-item {
       border-bottom: 1px solid #f5f5f5;
-      font-size: 0.90rem;
-      margin-left: 12px;
-      padding: 8px 0;
+      font-size: 0.92rem;
+      margin-left: 10px;
+      padding: 7px 0;
     }
 
     .musica-item:last-child {
@@ -54,94 +56,99 @@ const escalaCardCSS = `
     }
 
     .tom {
-      color: #27ae6099;
+      color: #27ae60;
       font-weight: 500;
     }
 
     .equipe {
-      padding: 0 20px 20px;
+      padding: 0 18px 18px;
     }
 
     .membros {
       display: flex;
       flex-wrap: wrap;
-      gap: 3px;
+      gap: 6px;
       margin-top: 8px;
     }
 
     .membro-tag {
       background: #f1f5f9;
       color: #334155;
-      padding: 4px 10px;
+      padding: 5px 11px;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
     }
 
     .observacoes {
       background: #fff8e1;
-      padding: 16px 20px;
+      padding: 16px 18px;
       border-top: 1px solid #ffeaa7;
       color: #5d4037;
-      font-size: 0.85rem;
+      font-size: 0.86rem;
     }
 
-    /* ============== ESTILO ESPECÍFICO PARA PENDENTES ============== */
+    /* Ajustes para telas pendentes */
     .escala-card.pendente .card-header {
-      padding: 16px 20px;
+      padding: 16px 18px;
     }
 
     .escala-card.pendente .card-header h3 {
-      font-size: 1.10rem;
+      font-size: 1.05rem;
       font-weight: 600;
       color: #2c3e50;
       margin: 0;
     }
 
-    .escala-card.pendente .musicas {
-      padding: 16px 20px;
-      margin-bottom: 0.5rem;
-    }
-
     .escala-card.pendente .musica-item {
-      margin-left: 12px;
-      padding: 6px 0;
+      margin-left: 0;
     }
 
     .equipe-pendente {
       margin-top: 1rem;
       padding-top: 1rem;
       border-top: 1px solid #eee;
-      padding-bottom: 10px;
     }
 
     .btn-group {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
-      margin-top: 10px;
-      padding: 0 20px 20px;
+      margin-top: 15px;
+      padding: 0 18px 20px;
+    }
+
+    .btn-aprovar, .btn-editar {
+      font-size: 0.85rem;
+      padding: 11px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .btn-aprovar {
-      font-size: 0.85rem;
-      background: #52d27099;
+      background: #28a74599;
       color: white;
-      padding: 11px 20px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
     }
 
     .btn-editar {
-      font-size: 0.85rem;
-      background: #f2c64399;
+      background: #ffc10799;
       color: #212529;
-      padding: 11px 20px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
+    }
+
+    /* Melhor responsividade em telas pequenas */
+    @media (max-width: 480px) {
+      .escala-card {
+        margin-bottom: 20px;
+        border-radius: 14px;
+      }
+      .card-header, .musicas, .equipe, .observacoes, .btn-group {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .musica-item {
+        font-size: 0.90rem;
+      }
     }
   </style>
 `;
@@ -160,7 +167,6 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
   const card = document.createElement('div');
   card.className = `escala-card ${onAprovar || onEditar ? 'pendente' : ''}`;
 
-  // Torna clicável no feed quando logado
   if (isLogado && !onAprovar && !onEditar) {
     card.style.cursor = 'pointer';
     card.onclick = () => window.location.href = `editar-escala.html?id=${escala.id}`;
@@ -174,7 +180,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
 
   const corBadge = getTipoCultoColor(escala.tipoCulto || '');
 
-  const musicasHTML = (escala.musicas && escala.musicas.length)
+  const musicasHTML = (escala.musicas && escala.musicas.length) 
     ? escala.musicas.map(m => `
         <div class="musica-item">
           ${m.titulo} ${m.tom ? `<span class="tom">(${m.tom})</span>` : ''}
@@ -195,7 +201,6 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
       ${onEditar ? `<button onclick="${onEditar}" class="btn-editar">EDITAR</button>` : ''}
     </div>` : '';
 
-  // Header diferente conforme o contexto
   const headerHTML = (onAprovar || onEditar) 
     ? `<h3>${escala.tipoCulto || 'Culto'} - ${dataFormatada}</h3>`
     : `
@@ -204,9 +209,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
     `;
 
   card.innerHTML = `
-    <div class="card-header">
-      ${headerHTML}
-    </div>
+    <div class="card-header">${headerHTML}</div>
     <div class="musicas">${musicasHTML}</div>
     <div class="equipe ${onAprovar || onEditar ? 'equipe-pendente' : ''}">
       <div class="membros">${equipeHTML}</div>
@@ -218,7 +221,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
   return card;
 }
 
-// Adiciona CSS apenas uma vez
+// Adiciona o CSS uma única vez
 if (!document.getElementById('escala-card-styles')) {
   const styleDiv = document.createElement('div');
   styleDiv.id = 'escala-card-styles';

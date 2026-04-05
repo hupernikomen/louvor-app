@@ -3,9 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
-
   <title>Editar Escala - Louvor</title>
 
   <script type="module">
@@ -21,6 +18,7 @@
     let todosMembros = [];
     let cultosFixos = [];
     let isNovaEscala = false;
+    let statusOriginal = "pendente";   // ← Novo: vamos guardar o status original
 
     onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "hupcontato@gmail.com") {
@@ -79,7 +77,6 @@
     function handleTipoCultoChange() {
       const valor = document.getElementById('tipoCulto').value;
       const container = document.getElementById('personalizarTipoContainer');
-
       if (valor === "personalizar") {
         container.style.display = 'block';
       } else {
@@ -95,7 +92,6 @@
     function handleNumMusicasChange() {
       const valor = document.getElementById('numMusicas').value;
       const container = document.getElementById('personalizarNumContainer');
-
       if (valor === "personalizar") {
         container.style.display = 'block';
       } else {
@@ -107,7 +103,6 @@
     function renderizarMusicas(numMusicas = 5) {
       const container = document.getElementById('musicasContainer');
       container.innerHTML = '';
-
       for (let i = 0; i < numMusicas; i++) {
         const musicaAtual = escalaAtual?.musicas?.[i] || {};
         container.innerHTML += `
@@ -131,7 +126,7 @@
       container.innerHTML = '<h3 style="margin: 20px 0 10px 0;">Equipe de Louvor</h3>';
 
       if (todosMembros.length === 0) {
-        container.innerHTML += '<p style="color:#999; font-style:italic;">Nenhum membro cadastrado ainda.</p>';
+        container.innerHTML += '<p style="color:#999;">Nenhum membro cadastrado.</p>';
         return;
       }
 
@@ -164,19 +159,22 @@
 
       if (isNovaEscala) {
         escalaAtual = { data: "", tipoCulto: "", numMusicas: 5, musicas: [], equipe: [], observacoes: "" };
+        statusOriginal = "pendente";
       } else if (escalaId) {
         let docRef = doc(db, "escalasPendentes", escalaId);
         let docSnap = await getDoc(docRef);
+
         if (!docSnap.exists()) {
           docRef = doc(db, "escalasCulto", escalaId);
           docSnap = await getDoc(docRef);
         }
+
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
+          statusOriginal = escalaAtual.status || "pendente";
         }
       }
 
-      // Preenche campos
       document.getElementById('data').value = escalaAtual.data || '';
       document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
       document.getElementById('numMusicas').value = escalaAtual.numMusicas || '';
@@ -186,6 +184,7 @@
       renderizarEquipe();
     }
 
+    // ====================== SALVAR - CORRIGIDO ======================
     window.salvarAlteracoes = async () => {
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
       if (tipoCultoFinal === "personalizar") {
@@ -222,8 +221,8 @@
         musicas: musicasSelecionadas,
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
-        status: "pendente",
-        criadoEm: new Date().toISOString()
+        status: statusOriginal,           // ← Mantém o status original!
+        criadoEm: escalaAtual.criadoEm || new Date().toISOString()
       };
 
       try {
@@ -232,7 +231,12 @@
           alert("✅ Nova escala criada com sucesso!");
         } else if (escalaId) {
           let docRef = doc(db, "escalasPendentes", escalaId);
-          if (!(await getDoc(docRef)).exists()) docRef = doc(db, "escalasCulto", escalaId);
+          let docSnap = await getDoc(docRef);
+
+          if (!docSnap.exists()) {
+            docRef = doc(db, "escalasCulto", escalaId);
+          }
+
           await updateDoc(docRef, dados);
           alert("✅ Escala atualizada com sucesso!");
         }
@@ -250,26 +254,20 @@
     window.onload = carregarEscala;
   </script>
 
+  <!-- Estilos mantidos iguais da versão anterior -->
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; padding-bottom: 2rem; }
     .header { padding: 1rem 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-    .container { max-width: 1000px; margin: 0 auto; padding: .5rem; }
-    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1rem; }
+    .container { max-width: 700px; margin: 1.5rem auto; padding: 0 1rem; }
+    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 2rem; }
     label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; color: #4a5568; }
     input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; }
     input:focus, select:focus, textarea:focus { border-color: #4299e1; outline: none; }
-        .btn-voltar {
-      padding: 12px; background: linear-gradient(135deg, #3498db, #2980b9); color: white;
-      border: none; border-radius: 12px; cursor: pointer; width: 52px; height: 52px;
-      display: flex; align-items: center; justify-content: center;
-    }
+
     .personalizar-container { margin-top: 8px; display: none; }
     .equipe-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
-    .membro-item { 
-      display: flex; justify-content: space-between; align-items: center; 
-      padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7;
-    }
+    .membro-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7; }
     .membro-nome { font-weight: 600; color: #2d3748; }
     .membro-funcao { color: #718096; font-size: 0.9rem; }
 
@@ -287,16 +285,16 @@
     .switch-input:checked + .switch-toggle::before { transform: translateX(24px); }
 
     .musica-edit { margin-bottom: 1.5rem; }
-    button { 
-      width: 100%; padding: 1rem; border: none; border-radius: 10px; 
-      font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem;
-    }
+    button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
   </style>
 </head>
 <body>
-    <div id="header-placeholder"></div>
+  <header class="header">
+    <h1>${isNovaEscala ? 'Nova Escala' : 'Editar Escala'}</h1>
+    <a href="escalas-pendentes.html" style="color:#4299e1; font-weight:500; text-decoration:none;">← Voltar</a>
+  </header>
 
   <div class="container">
     <div class="card">
@@ -327,8 +325,5 @@
       <button class="btn-cancelar" onclick="window.history.back()">Cancelar</button>
     </div>
   </div>
-
-    <script src="header.js"></script>
-  <script>carregarHeader('Criar Escala');</script>
 </body>
 </html>

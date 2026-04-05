@@ -96,7 +96,7 @@
             </div>
 
             <div class="musicas">
-              ${escala.musicas.map(m => `
+              ${escala.musicas.map(m => console.log(m) || `
                 <div class="musica-item">
                   ${m.titulo} ${m.tom ? `<span class="tom">(${m.tom})</span>` : ''}
                 </div>

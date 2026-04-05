@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,7 @@
     function atualizarMenu() {
       const btnLogin = document.getElementById('btnLogin');
       const menuLogado = document.getElementById('menuLogado');
-      
+
       if (usuarioLogado) {
         btnLogin.style.display = 'none';
         menuLogado.style.display = 'flex';
@@ -74,9 +75,9 @@
 
           encontrouFutura = true;
 
-          const dataFormatada = dataEscala.toLocaleDateString('pt-BR', { 
-            weekday: 'short', 
-            day: '2-digit', 
+          const dataFormatada = dataEscala.toLocaleDateString('pt-BR', {
+            weekday: 'short',
+            day: '2-digit',
             month: 'short'
           });
 
@@ -138,13 +139,19 @@
   </script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: #f8f9fc;
       color: #333;
       line-height: 1.6;
     }
+
     .header {
       position: sticky;
       background: #f8f9fa;
@@ -153,22 +160,25 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
       z-index: 100;
     }
+
     .container {
       max-width: 100%;
       margin: 0;
       padding: 22px;
     }
+
     .escala-card {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
       margin-bottom: 35px;
       overflow: hidden;
       border: 1px solid #f0f0f0;
     }
+
     .card-header {
       background: #f1f5f9;
       padding: 16px 20px;
@@ -177,6 +187,7 @@
       align-items: center;
       border-bottom: 1px solid #eee;
     }
+
     .tipo-culto {
       background: #3498db;
       color: #fff;
@@ -186,30 +197,43 @@
       font-weight: 600;
       text-transform: uppercase;
     }
+
     .data {
       font-weight: 600;
       color: #2c3e50;
       font-size: 0.95rem;
     }
+
     .musicas {
       padding: 20px;
     }
+
     .musica-item {
       padding: 10px 0;
       border-bottom: 1px solid #f5f5f5;
       font-size: 1rem;
     }
-    .musica-item:last-child { border-bottom: none; }
-    .tom { color: #27ae60; font-weight: 500; }
+
+    .musica-item:last-child {
+      border-bottom: none;
+    }
+
+    .tom {
+      color: #27ae60;
+      font-weight: 500;
+    }
+
     .equipe {
       padding: 0 20px 20px;
     }
+
     .membros {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin-top: 8px;
     }
+
     .membro-tag {
       background: #f1f5f9;
       color: #334155;
@@ -217,6 +241,7 @@
       border-radius: 20px;
       font-size: 0.9rem;
     }
+
     .observacoes {
       background: #fff8e1;
       padding: 16px 20px;
@@ -224,12 +249,20 @@
       color: #5d4037;
       font-size: 0.95rem;
     }
-    .loading, .empty-state, .error {
+
+    .loading,
+    .empty-state,
+    .error {
       text-align: center;
       padding: 80px 20px;
       color: #777;
     }
-    .empty-state h2 { color: #2c3e50; margin-bottom: 12px; }
+
+    .empty-state h2 {
+      color: #2c3e50;
+      margin-bottom: 12px;
+    }
+
     .btn-login {
       background: #3498db;
       color: white;
@@ -240,9 +273,10 @@
     }
   </style>
 </head>
+
 <body>
   <header class="header">
-    <h1 style="font-size: 1.7rem;">Escala de Louvor</h1>
+    <h1 style="font-size: 1.7rem;">Louvores</h1>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
       <div id="menuLogado" style="display:none; gap:10px;">
@@ -255,4 +289,5 @@
     <div id="feed"></div>
   </div>
 </body>
+
 </html>

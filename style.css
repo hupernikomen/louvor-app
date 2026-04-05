@@ -37,25 +37,7 @@ body {
     margin-bottom: 2rem;
 }
 
-.btn-voltar {
-    padding: 12px;
-    background: linear-gradient(135deg, #0f74cd, #1e88e5);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    width: 52px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-}
 
-.btn-voltar:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(15, 116, 205, 0.4);
-}
 
 /* Cards */
 .card {

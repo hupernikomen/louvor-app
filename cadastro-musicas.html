@@ -10,7 +10,6 @@
   <title>Cadastro de Músicas</title>
 
   <style>
-    /* ===== CSS mantido igual (sem mudanças visuais) ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -32,26 +31,42 @@
     }
     .card {
       background: white; border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-      padding: 2rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
+      padding: 1.5rem; margin-bottom: 2rem; border: 1px solid #f0f0f0;
     }
-    .card h2 { color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.4rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; }
+    .card h2 { 
+      color: #2c3e50; margin-bottom: 1.5rem; font-size: 1.4rem; 
+      padding-bottom: 0.5rem; border-bottom: 2px solid #3498db; 
+    }
     form { display: grid; gap: 1.25rem; }
     label { font-weight: 600; color: #2c3e50; margin-bottom: 0.5rem; display: block; }
     input, textarea {
       width: 100%; padding: 14px 16px; border: 2px solid #e9ecef; border-radius: 10px;
       font-size: 16px; background: #fafbfc;
     }
-    input:focus, textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); }
+    input:focus, textarea:focus { 
+      outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,0.1); 
+    }
     textarea { resize: vertical; min-height: 100px; }
     button[type="submit"] {
       background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;
       padding: 16px 24px; border: none; border-radius: 12px; font-size: 1.1rem;
       font-weight: 600; cursor: pointer; margin-top: 1rem;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; background: white; border-radius: 12px; overflow: hidden; }
-    th, td { padding: 6px 6px; text-align: left; border-bottom: 1px solid #f0f0f0; }
-    th { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
-    .btn-tabela { padding: 10px 12px; border: none; border-radius: 10px; cursor: pointer; margin: 0 4px; width: 48px; height: 48px; }
+    table { 
+      width: 100%; border-collapse: collapse; margin-top: 1.5rem; 
+      background: white; border-radius: 12px; overflow: hidden; 
+    }
+    th, td { 
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid #f0f0f0; 
+    }
+    th { 
+      background: linear-gradient(135deg, #3498db, #2980b9); color: white; 
+      font-weight: 600; text-transform: uppercase;
+    }
+    .btn-tabela { 
+      padding: 10px 12px; border: none; border-radius: 10px; cursor: pointer; 
+      margin: 0 4px; width: 48px; height: 48px; 
+    }
     .btn-tabela.editar { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; }
     .btn-tabela.excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
   </style>
@@ -68,9 +83,18 @@
       tbody.innerHTML = '';
 
       const snapshot = await getDocs(musicasRef);
+      
+      // Converte para array e ordena alfabeticamente pelo título
+      let musicas = [];
       snapshot.forEach((docSnap) => {
-        const m = docSnap.data();
-        const id = docSnap.id;
+        musicas.push({ id: docSnap.id, ...docSnap.data() });
+      });
+
+      // Ordenação alfabética (ignorando maiúsculas/minúsculas)
+      musicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+
+      musicas.forEach((m) => {
+        const id = m.id;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -127,7 +151,7 @@
         }
 
         e.target.reset();
-        carregarMusicas();
+        carregarMusicas();   // Recarrega a lista já ordenada
       } catch (error) {
         alert("❌ Erro: " + error.message);
       }

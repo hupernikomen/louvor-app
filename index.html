@@ -104,7 +104,6 @@
             </div>
 
             <div class="equipe">
-              <strong>Equipe:</strong>
               <div class="membros">
                 ${escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('')}
               </div>
@@ -173,7 +172,7 @@
     .escala-card {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
       margin-bottom: 35px;
       overflow: hidden;
       border: 1px solid #f0f0f0;
@@ -181,7 +180,7 @@
 
     .card-header {
       background: #f1f5f9;
-      padding: 16px 20px;
+      padding: 8px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -205,11 +204,10 @@
     }
 
     .musicas {
-      padding: 20px;
+      padding: 10px 20px;
     }
 
     .musica-item {
-      padding: 10px 0;
       border-bottom: 1px solid #f5f5f5;
       font-size: 1rem;
     }
@@ -237,7 +235,7 @@
     .membro-tag {
       background: #f1f5f9;
       color: #334155;
-      padding: 4px 12px;
+      padding: 2px 12px;
       border-radius: 20px;
       font-size: 0.9rem;
     }

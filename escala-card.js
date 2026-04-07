@@ -5,7 +5,7 @@
 function getTipoCultoColor(tipo) {
   const t = (tipo || "").toLowerCase().trim();
   if (t.includes("louvor") || t.includes("pregação")) return "#f3707099";
-  if (t.includes("oração") || t.includes("doutrina")) return "#56cff799";
+  if (t.includes("oração") || t.includes("doutrina")) return "#51bee399";
   if (t.includes("ebd")) return "#3498db99";
   if (t.includes("evento")) return "#9b59b699";
   if (t.includes("especial")) return "#f39c1299";
@@ -41,7 +41,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
     : '<span style="color:#999;">Nenhum membro definido</span>';
 
   const observacoesHTML = escala.observacoes 
-    ? `<div class="observacoes"><strong>Obs.:</strong> ${escala.observacoes}</div>` 
+    ? `<div class="observacoes">${escala.observacoes}</div>` 
     : '';
 
   const botoesHTML = (onAprovar || onEditar) ? `

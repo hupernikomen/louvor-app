@@ -1,5 +1,5 @@
 // ================================================
-// escala-card.js - Apenas lógica do card (sem CSS injetado)
+// escala-card.js - Apenas lógica do card (CSS está nos HTMLs)
 // ================================================
 
 function getTipoCultoColor(tipo) {

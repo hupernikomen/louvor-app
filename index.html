@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Escalas de Louvor</title>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
   <script type="module">
     import { db, auth } from './firebase-config.js';
@@ -31,6 +33,32 @@
       }
     }
 
+    // ==================== ORDENAÇÃO PERSONALIZADA ====================
+    function ordenarEscalas(escalas) {
+      const ordemCultos = {
+        "EBD": 1,
+        "Louvor e Pregação": 2,
+        "Oração e Doutrina": 3,
+        "Evento Especial": 4
+      };
+
+      return escalas.sort((a, b) => {
+        const dataA = a.data || '';
+        const dataB = b.data || '';
+
+        // Primeiro ordena por data
+        if (dataA !== dataB) {
+          return dataA.localeCompare(dataB);
+        }
+
+        // Mesmo dia → ordena pela prioridade do culto
+        const ordemA = ordemCultos[a.tipoCulto] || 99;
+        const ordemB = ordemCultos[b.tipoCulto] || 99;
+
+        return ordemA - ordemB;
+      });
+    }
+
     async function carregarEscalas() {
       const feed = document.getElementById('feed');
       feed.innerHTML = '<p class="loading">Carregando próximas escalas...</p>';
@@ -40,7 +68,7 @@
         const q = query(escalasRef, orderBy("data"));
         const snapshot = await getDocs(q);
 
-        const escalasAprovadas = [];
+        let escalasAprovadas = [];
         snapshot.forEach(doc => {
           const e = doc.data();
           if (e.status === "aprovada") {
@@ -57,7 +85,8 @@
           return;
         }
 
-        escalasAprovadas.sort((a, b) => new Date(a.data) - new Date(b.data));
+        // Aplica a ordenação correta (data + ordem dos cultos no mesmo dia)
+        escalasAprovadas = ordenarEscalas(escalasAprovadas);
 
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
@@ -69,11 +98,11 @@
           if (!escala.data) return;
 
           const dataEscala = new Date(escala.data + 'T12:00:00');
-          if (dataEscala < hoje) return;
+          if (dataEscala < hoje) return;   // ignora escalas passadas
 
           encontrouFutura = true;
 
-          const card = criarEscalaCard(escala, usuarioLogado);   // sem botões
+          const card = criarEscalaCard(escala, usuarioLogado);
           feed.appendChild(card);
         });
 
@@ -179,7 +208,7 @@
       font-weight: 500;
       color: #2c3e50;
       font-size: 0.80rem;
-       text-transform: uppercase;
+      text-transform: uppercase;
     }
 
     .musicas {
@@ -226,59 +255,12 @@
       color: #222;
       font-size: 0.90rem;
     }
-
-    /* Ajustes para pendentes */
-    .escala-card.pendente .card-header h3 {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #2c3e50;
-      margin: 0;
-    }
-
-    .escala-card.pendente .musica-item {
-      margin-left: 0;
-    }
-
-    .equipe-pendente {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #eee;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 15px;
-      padding: 0 18px 20px;
-    }
-
-    .btn-aprovar,
-    .btn-editar {
-      font-size: 0.85rem;
-      padding: 11px 20px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn-aprovar {
-      background: #28a74599;
-      color: white;
-    }
-
-    .btn-editar {
-      background: #ffc10799;
-      color: #212529;
-    }
-
   </style>
 </head>
 
 <body>
   <header class="header">
-    <h1 style="font-size: 1.7rem; margin: 0;"></h1>
+    <h1 style="font-size: 1.7rem; margin: 0;">Escalas de Louvor</h1>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
       <div id="menuLogado" style="display:none; gap:10px;">
@@ -291,8 +273,7 @@
     <div id="feed"></div>
   </div>
 
-  <!-- Card Unificado com CSS -->
+  <!-- Card Unificado -->
   <script src="escala-card.js"></script>
 </body>
-
 </html>

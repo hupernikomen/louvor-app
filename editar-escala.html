@@ -210,9 +210,9 @@
         .filter(Boolean)
         .map(m => ({ titulo: m.titulo, tom: m.tom }));
 
-      if (musicasSelecionadas.length !== numMusicasFinal) {
-        return alert(`Você deve selecionar exatamente ${numMusicasFinal} músicas.`);
-      }
+      // if (musicasSelecionadas.length !== numMusicasFinal) {
+      //   return alert(`Você deve selecionar exatamente ${numMusicasFinal} músicas.`);
+      // }
 
       const equipeSalvar = todosMembros
         .filter((_, index) => {

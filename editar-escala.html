@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editar Escala - Louvor</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <script type="module">
     import { db, auth } from './firebase-config.js';
@@ -52,6 +51,9 @@
     async function carregarTodasMusicas() {
       const snapshot = await getDocs(collection(db, "musicas"));
       todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Ordenação alfabética por título (com suporte a acentos)
+      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
     }
 
     async function carregarTodosMembros() {
@@ -187,11 +189,9 @@
       renderizarMusicas(escalaAtual.numMusicas || 5);
       renderizarEquipe();
 
-      // Mostrar ou esconder botão de excluir
       document.getElementById('btn-excluir').style.display = isNovaEscala ? 'none' : 'block';
     }
 
-    // ====================== SALVAR ======================
     window.salvarAlteracoes = async () => {
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
       if (tipoCultoFinal === "personalizar") {
@@ -244,7 +244,6 @@
           }
           await updateDoc(docRef, dados);
           alert("✅ Escala atualizada com sucesso!");
-          window.location.href = "index.html";
         }
         window.location.href = "index.html";
       } catch (e) {
@@ -252,23 +251,14 @@
       }
     };
 
-    // ====================== EXCLUIR ESCALA ======================
     window.excluirEscala = async function () {
-      if (!confirm("⚠️ Tem certeza que deseja excluir esta escala permanentemente?\n\nEsta ação não pode ser desfeita.")) {
-        return;
-      }
+      if (!confirm("⚠️ Tem certeza que deseja excluir esta escala permanentemente?\n\nEsta ação não pode ser desfeita.")) return;
 
       try {
-        // Tenta excluir das duas coleções (uma delas provavelmente não existe)
-        await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => { });
-        await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => { });
-
+        await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
+        await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
         alert("🗑️ Escala excluída com sucesso!");
-
-        // Volta para a página anterior (melhor experiência)
-        setTimeout(() => {
-          window.history.back();
-        }, 800);   // pequeno delay para o usuário ver o alert
+        setTimeout(() => window.history.back(), 800);
       } catch (e) {
         alert("Erro ao excluir escala: " + e.message);
       }
@@ -283,25 +273,18 @@
   </script>
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: system-ui, sans-serif;
       background: #fff;
       min-height: 100vh;
       padding-bottom: 2rem;
     }
-
     .container {
       max-width: 1000px;
       margin: 0 auto;
       padding: .5rem;
     }
-
     .card {
       background: white;
       border-radius: 16px;
@@ -309,42 +292,32 @@
       padding: 1.5rem;
       margin-bottom: 1rem;
     }
-
     label {
       display: block;
       margin: 1.2rem 0 0.5rem;
       font-weight: 600;
       color: #4a5568;
     }
-
-    input,
-    select,
-    textarea {
+    input, select, textarea {
       width: 100%;
       padding: 0.9rem;
       border: 2px solid #e2e8f0;
       border-radius: 10px;
       font-size: 1rem;
     }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
+    input:focus, select:focus, textarea:focus {
       border-color: #4299e1;
       outline: none;
     }
-
     .personalizar-container {
       margin-top: 8px;
       display: none;
     }
-
     .equipe-grid {
       display: grid;
       gap: 1rem;
       margin: 1.5rem 0;
     }
-
     .membro-item {
       display: flex;
       justify-content: space-between;
@@ -354,40 +327,21 @@
       border-radius: 10px;
       border: 2px solid #edf2f7;
     }
-
-    .membro-nome {
-      font-weight: 600;
-      color: #2d3748;
-    }
-
-    .membro-funcao {
-      color: #718096;
-      font-size: 0.9rem;
-    }
-
+    .membro-nome { font-weight: 600; color: #2d3748; }
+    .membro-funcao { color: #718096; font-size: 0.9rem; }
     .switch-container {
       position: relative;
       width: 50px;
       height: 26px;
     }
-
-    .switch-input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
+    .switch-input { opacity: 0; width: 0; height: 0; }
     .switch-toggle {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: #cbd5e0;
       border-radius: 26px;
       cursor: pointer;
     }
-
     .switch-toggle::before {
       content: "";
       position: absolute;
@@ -399,19 +353,13 @@
       border-radius: 50%;
       transition: 0.3s;
     }
-
-    .switch-input:checked+.switch-toggle {
+    .switch-input:checked + .switch-toggle {
       background: #48bb78;
     }
-
-    .switch-input:checked+.switch-toggle::before {
+    .switch-input:checked + .switch-toggle::before {
       transform: translateX(24px);
     }
-
-    .musica-edit {
-      margin-bottom: 1.5rem;
-    }
-
+    .musica-edit { margin-bottom: 1.5rem; }
     button {
       width: 100%;
       padding: 1rem;
@@ -422,22 +370,9 @@
       cursor: pointer;
       margin-top: 1rem;
     }
-
-    .btn-salvar {
-      background: linear-gradient(135deg, #48bb78, #38a169);
-      color: white;
-    }
-
-    .btn-cancelar {
-      background: #a0aec0;
-      color: white;
-    }
-
-    .btn-excluir {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: white;
-      margin-top: 10px;
-    }
+    .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
+    .btn-cancelar { background: #a0aec0; color: white; }
+    .btn-excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-top: 10px; }
   </style>
 </head>
 
@@ -480,5 +415,4 @@
   <script src="header.js"></script>
   <script>carregarHeader('Editar Escala');</script>
 </body>
-
 </html>

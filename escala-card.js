@@ -38,7 +38,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
 
   const equipeHTML = (escala.equipe && escala.equipe.length)
     ? escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('')
-    : '<span style="color:#999;">Nenhum membro definido</span>';
+    : '';
 
   const observacoesHTML = escala.observacoes 
     ? `<div class="observacoes">${escala.observacoes}</div>` 

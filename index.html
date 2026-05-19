@@ -6,7 +6,7 @@
   <title>Escalas de Louvor</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <script type="module">
     import { db, auth } from './firebase-config.js';
@@ -14,6 +14,8 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     let usuarioLogado = false;
+    let escalasTodas = [];
+    let mostrandoAnteriores = false;
 
     onAuthStateChanged(auth, (user) => {
       usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
@@ -33,7 +35,7 @@
       }
     }
 
-    // ==================== ORDENAÇÃO PERSONALIZADA ====================
+    // ==================== ORDENAÇÃO ====================
     function ordenarEscalas(escalas) {
       const ordemCultos = {
         "EBD": 1,
@@ -43,76 +45,68 @@
       };
 
       return escalas.sort((a, b) => {
-        const dataA = a.data || '';
-        const dataB = b.data || '';
-
-        // Primeiro ordena por data
-        if (dataA !== dataB) {
-          return dataA.localeCompare(dataB);
-        }
-
-        // Mesmo dia → ordena pela prioridade do culto
+        if (a.data !== b.data) return a.data.localeCompare(b.data);
         const ordemA = ordemCultos[a.tipoCulto] || 99;
         const ordemB = ordemCultos[b.tipoCulto] || 99;
-
         return ordemA - ordemB;
       });
     }
 
-    async function carregarEscalas() {
+    async function carregarEscalas(mostrarAnteriores = false) {
+      mostrandoAnteriores = mostrarAnteriores;
       const feed = document.getElementById('feed');
-      feed.innerHTML = '<p class="loading">Carregando próximas escalas...</p>';
+      const btnAlternar = document.getElementById('btnAlternar');
+      const titulo = document.getElementById('tituloFeed');
+
+      feed.innerHTML = '<p class="loading">Carregando escalas...</p>';
 
       try {
         const escalasRef = collection(db, "escalasCulto");
-        const q = query(escalasRef, orderBy("data"));
+        const q = query(escalasRef, orderBy("data", "desc"));
         const snapshot = await getDocs(q);
 
-        let escalasAprovadas = [];
+        escalasTodas = [];
         snapshot.forEach(doc => {
           const e = doc.data();
           if (e.status === "aprovada") {
-            escalasAprovadas.push({ id: doc.id, ...e });
+            escalasTodas.push({ id: doc.id, ...e });
           }
         });
-
-        if (escalasAprovadas.length === 0) {
-          feed.innerHTML = `
-            <div class="empty-state">
-              <h2>Nenhuma escala postada</h2>
-              <p>As escalas aparecerão aqui assim que forem criadas.</p>
-            </div>`;
-          return;
-        }
-
-        // Aplica a ordenação correta (data + ordem dos cultos no mesmo dia)
-        escalasAprovadas = ordenarEscalas(escalasAprovadas);
 
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
+        let escalasFiltradas = [];
+
+        if (mostrarAnteriores) {
+          escalasFiltradas = escalasTodas
+            .filter(e => new Date(e.data + 'T12:00:00') < hoje)
+            .slice(0, 30);   // ← Alterado para 30
+          titulo.textContent = "Últimas 30 Escalas Realizadas";
+          btnAlternar.innerHTML = `Voltar`;
+        } else {
+          escalasFiltradas = escalasTodas
+            .filter(e => new Date(e.data + 'T12:00:00') >= hoje);
+          titulo.textContent = "";
+          btnAlternar.innerHTML = `Anteriores`;
+        }
+
+        escalasFiltradas = ordenarEscalas(escalasFiltradas);
+
+        if (escalasFiltradas.length === 0) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <h2>${mostrarAnteriores ? 'Nenhuma escala passada encontrada' : 'Não há escalas futuras'}</h2>
+              <p>${mostrarAnteriores ? 'As últimas escalas realizadas aparecerão aqui.' : 'As próximas escalas aparecerão aqui assim que forem aprovadas.'}</p>
+            </div>`;
+          return;
+        }
+
         feed.innerHTML = '';
-        let encontrouFutura = false;
-
-        escalasAprovadas.forEach(escala => {
-          if (!escala.data) return;
-
-          const dataEscala = new Date(escala.data + 'T12:00:00');
-          if (dataEscala < hoje) return;   // ignora escalas passadas
-
-          encontrouFutura = true;
-
+        escalasFiltradas.forEach(escala => {
           const card = criarEscalaCard(escala, usuarioLogado);
           feed.appendChild(card);
         });
-
-        if (!encontrouFutura) {
-          feed.innerHTML = `
-            <div class="empty-state">
-              <h2>Não há escalas futuras aprovadas</h2>
-              <p>As próximas escalas aparecerão aqui.</p>
-            </div>`;
-        }
 
       } catch (error) {
         console.error(error);
@@ -120,8 +114,12 @@
       }
     }
 
+    window.alternarEscalas = function() {
+      carregarEscalas(!mostrandoAnteriores);
+    };
+
     window.onload = () => {
-      carregarEscalas();
+      carregarEscalas(false);
     };
   </script>
 
@@ -148,6 +146,7 @@
       align-items: center;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
       z-index: 100;
+      background: #f8f9fc;
     }
 
     .container {
@@ -156,9 +155,28 @@
       padding: 1rem;
     }
 
-    .loading,
-    .empty-state,
-    .error {
+    /* Botão discreto, pequeno e centralizado */
+    .btn-alternar {
+      display: block;
+      margin: 1px auto 25px auto;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      background: #e9ecef;
+      color: #5a6470;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: fit-content;
+    }
+
+    .btn-alternar:hover {
+      background: #dee2e6;
+      transform: translateY(-1px);
+    }
+
+    .loading, .empty-state, .error {
       text-align: center;
       padding: 80px 20px;
       color: #777;
@@ -175,9 +193,10 @@
       padding: 12px;
       border-radius: 16px;
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.9rem;
     }
 
+    /* ==================== ESTILOS DOS CARDS ==================== */
     .escala-card {
       background: white;
       border-radius: 16px;
@@ -207,7 +226,7 @@
     .data {
       font-weight: 500;
       color: #2c3e50;
-      font-size: 0.80rem;
+      font-size: 0.85rem;
       text-transform: uppercase;
     }
 
@@ -217,6 +236,7 @@
 
     .musica-item {
       font-size: 0.92rem;
+      border-bottom: 1px solid #f5f5f5;
     }
 
     .musica-item:last-child {
@@ -237,7 +257,6 @@
       flex-wrap: wrap;
       gap: 6px;
       margin-top: 6px;
-      margin-bottom: 6px;
     }
 
     .membro-tag {
@@ -260,7 +279,7 @@
 
 <body>
   <header class="header">
-    <h1 style="font-size: 1.7rem; margin: 0;"></h1>
+    <h1 style="font-size: 1.2rem; margin: 0;font-weight: 500;">Escala de Louvor</h1>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
       <div id="menuLogado" style="display:none; gap:10px;">
@@ -270,10 +289,15 @@
   </header>
 
   <div class="container">
+    <button onclick="alternarEscalas()" id="btnAlternar" class="btn-alternar">
+      Anteriores
+    </button>
+
+    <h2 id="tituloFeed" style="margin: 10px 0 20px 5px; color: #2c3e50; text-align: center;"></h2>
+    
     <div id="feed"></div>
   </div>
 
-  <!-- Card Unificado -->
   <script src="escala-card.js"></script>
 </body>
 </html>

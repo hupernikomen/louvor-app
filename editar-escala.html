@@ -52,7 +52,6 @@
       const snapshot = await getDocs(collection(db, "musicas"));
       todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // Ordenação alfabética por título (com suporte a acentos)
       todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
     }
 
@@ -116,11 +115,14 @@
             <label><strong>${i + 1}ª Música</strong></label>
             <select class="select-musica">
               <option value="">Selecione uma música...</option>
-              ${todasMusicas.map(mus => `
-                <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
-                  ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''}
-                </option>
-              `).join('')}
+              ${todasMusicas.map(mus => {
+                const tags = mus.tags ? ` [${mus.tags}]` : '';
+                return `
+                  <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
+                    ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''}${tags}
+                  </option>
+                `;
+              }).join('')}
             </select>
           </div>
         `;
@@ -209,10 +211,6 @@
         .map(select => todasMusicas.find(m => m.id === select.value))
         .filter(Boolean)
         .map(m => ({ titulo: m.titulo, tom: m.tom }));
-
-      // if (musicasSelecionadas.length !== numMusicasFinal) {
-      //   return alert(`Você deve selecionar exatamente ${numMusicasFinal} músicas.`);
-      // }
 
       const equipeSalvar = todosMembros
         .filter((_, index) => {

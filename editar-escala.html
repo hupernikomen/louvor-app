@@ -19,13 +19,10 @@
     let todosMembros = [];
     let cultosFixos = [];
     let isNovaEscala = false;
-    let statusOriginal = "pendente";
     let musicasSelecionadas = [];
 
     onAuthStateChanged(auth, (user) => {
-      if (!user || user.email !== "hupcontato@gmail.com") {
-        window.location.href = "login.html";
-      }
+      if (!user || user.email !== "hupcontato@gmail.com") window.location.href = "login.html";
     });
 
     function getUrlParams() {
@@ -34,7 +31,6 @@
       isNovaEscala = params.get('nova') === 'true';
     }
 
-    // Salvar estado temporário (para não perder ao voltar da seleção)
     function salvarEstadoTemporario() {
       sessionStorage.setItem('escalaEmEdicao', JSON.stringify({
         data: document.getElementById('data').value,
@@ -54,7 +50,7 @@
       document.getElementById('data').value = estado.data || '';
       document.getElementById('tipoCulto').value = estado.tipoCulto || '';
       document.getElementById('tipoCultoPersonalizado').value = estado.tipoCultoPersonalizado || '';
-      document.getElementById('numMusicas').value = estado.numMusicas || '';
+      document.getElementById('numMusicas').value = estado.numMusicas || 5;
       document.getElementById('numMusicasPersonalizado').value = estado.numMusicasPersonalizado || '';
       document.getElementById('observacoes').value = estado.observacoes || '';
       if (estado.musicasSelecionadas) musicasSelecionadas = estado.musicasSelecionadas;
@@ -84,14 +80,14 @@
     function preencherTipoCulto() {
       const select = document.getElementById('tipoCulto');
       select.innerHTML = '<option value="">Selecione o tipo de culto...</option>';
-      cultosFixos.forEach(culto => select.innerHTML += `<option value="${culto.nome}">${culto.nome}</option>`);
+      cultosFixos.forEach(c => select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
       select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
     }
 
     function preencherNumMusicas() {
       const select = document.getElementById('numMusicas');
       select.innerHTML = '<option value="">Selecione a quantidade...</option>';
-      const nums = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a, b) => a - b);
+      const nums = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a,b)=>a-b);
       nums.forEach(num => select.innerHTML += `<option value="${num}">${num} músicas</option>`);
       select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
     }
@@ -103,14 +99,12 @@
         const culto = cultosFixos.find(c => c.nome === valor);
         if (culto) definirQuantidadeMusicas(culto.numMusicas);
       }
-      salvarEstadoTemporario();
     }
 
     function handleNumMusicasChange() {
       const valor = document.getElementById('numMusicas').value;
       document.getElementById('personalizarNumContainer').style.display = valor === "personalizar" ? 'block' : 'none';
       if (valor !== "personalizar") definirQuantidadeMusicas(parseInt(valor) || 5);
-      salvarEstadoTemporario();
     }
 
     function definirQuantidadeMusicas(num) {
@@ -139,8 +133,7 @@
 
     window.abrirSelecaoMusica = function(slotIndex) {
       salvarEstadoTemporario();
-      const currentUrl = encodeURIComponent(window.location.href);
-      window.location.href = `selecionar-musica.html?slot=${slotIndex}&return=${currentUrl}`;
+      window.location.href = `selecionar-musica.html?slot=${slotIndex}`;
     };
 
     function verificarRetornoSelecao() {
@@ -153,8 +146,9 @@
         if (musica) {
           musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
           renderizarMusicas();
+          salvarEstadoTemporario();
         }
-        // Limpa a URL
+        // Limpa parâmetros da URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
@@ -168,7 +162,7 @@
       }
       let html = '<div class="equipe-grid">';
       todosMembros.forEach((membro, index) => {
-        const estaSelecionado = escalaAtual?.equipe?.some(m => m.nome === membro.nome) || false;
+        const checked = escalaAtual?.equipe?.some(m => m.nome === membro.nome) ? 'checked' : '';
         html += `
           <div class="membro-item">
             <div>
@@ -176,7 +170,7 @@
               <div class="membro-funcao">${membro.funcao}</div>
             </div>
             <label class="switch-container">
-              <input type="checkbox" class="switch-input" data-index="${index}" ${estaSelecionado ? 'checked' : ''}>
+              <input type="checkbox" class="switch-input" data-index="${index}" ${checked}>
               <span class="switch-toggle"></span>
             </label>
           </div>`;
@@ -210,7 +204,7 @@
         }
       }
 
-      document.getElementById('data').value = escalaAtual?.data || '';
+      document.getElementById('data').value = escalaAtual?.data || document.getElementById('data').value || '';
       document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
       document.getElementById('numMusicas').value = escalaAtual?.numMusicas || 5;
       document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
@@ -218,15 +212,16 @@
       renderizarMusicas();
       renderizarEquipe();
       verificarRetornoSelecao();
-
-      document.getElementById('btn-excluir').style.display = isNovaEscala ? 'none' : 'block';
     }
 
     window.salvarAlteracoes = async () => {
+      salvarEstadoTemporario();
+
+      // ... (código de salvamento mantido igual)
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
       if (tipoCultoFinal === "personalizar") tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
 
-      let numMusicasFinal = parseInt(document.getElementById('numMusicas').value);
+      let numMusicasFinal = parseInt(document.getElementById('numMusicas').value) || 5;
       if (document.getElementById('numMusicas').value === "personalizar") {
         numMusicasFinal = parseInt(document.getElementById('numMusicasPersonalizado').value);
       }
@@ -242,7 +237,7 @@
         musicas: musicasSelecionadas.filter(Boolean),
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
-        status: statusOriginal,
+        status: "pendente",
         criadoEm: new Date().toISOString()
       };
 
@@ -264,9 +259,9 @@
 
     window.excluirEscala = async function () {
       if (!confirm("Excluir esta escala?")) return;
+      sessionStorage.removeItem('escalaEmEdicao');
       await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
       await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-      sessionStorage.removeItem('escalaEmEdicao');
       alert("Escala excluída!");
       window.history.back();
     };

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <title>Escalas Pendentes - Aprovar</title>
 
@@ -68,17 +68,54 @@
       border: 1px solid #f0f0f0;
     }
 
-    /* ... (mantém o resto do CSS igual) ... */
-    .card-header { background: #f1f5f9; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-    .tipo-culto { padding: 5px 11px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; color: white; }
+    .card-header { 
+      background: #f1f5f9; 
+      padding: 14px 18px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 1px solid #eee; 
+    }
+    .tipo-culto { 
+      padding: 5px 11px; 
+      border-radius: 20px; 
+      font-size: 0.78rem; 
+      font-weight: 600; 
+      text-transform: uppercase; 
+      color: white; 
+    }
     .musicas { padding: 16px 18px; }
-    .musica-item { border-bottom: 1px solid #f5f5f5; font-size: 0.92rem; padding: 7px 0; }
+    .musica-item { 
+      border-bottom: 1px solid #f5f5f5; 
+      font-size: 0.92rem; 
+      padding: 7px 0; 
+    }
     .musica-item:last-child { border-bottom: none; }
     .tom { color: #27ae60; font-weight: 500; }
+    .tags { 
+      font-size: 0.8rem; 
+      color: #666; 
+      background: #f0f0f0; 
+      padding: 2px 6px; 
+      border-radius: 10px; 
+      margin-left: 6px;
+    }
     .equipe { padding: 0 18px 18px; }
     .membros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .membro-tag { background: #f1f5f9; color: #334155; padding: 5px 11px; border-radius: 20px; font-size: 0.84rem; }
-    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; padding: 0 18px 20px; }
+    .membro-tag { 
+      background: #f1f5f9; 
+      color: #334155; 
+      padding: 5px 11px; 
+      border-radius: 20px; 
+      font-size: 0.84rem; 
+    }
+    .btn-group { 
+      display: flex; 
+      gap: 12px; 
+      flex-wrap: wrap; 
+      margin-top: 15px; 
+      padding: 0 18px 20px; 
+    }
     .btn-aprovar { background: #28a745; color: white; padding: 11px 20px; border: none; border-radius: 8px; font-weight: 600; }
     .btn-editar { background: #ffc107; color: #212529; padding: 11px 20px; border: none; border-radius: 8px; font-weight: 600; }
   </style>
@@ -111,20 +148,14 @@
       window.location.href = `editar-escala.html?nova=true`;
     };
 
-    // ====================== FUNÇÃO PARA GERAR/REGENERAR SUGESTÃO ======================
     window.gerarSugestaoEscala = async function () {
-      // if (!confirm("Gerar nova sugestão de escala?\n\nSe já existir uma pendente, ela será excluída e substituída por uma nova.")) {
-      //   return;
-      // }
-
       const pendentesSnap = await getDocs(collection(db, "escalasPendentes"));
 
-      // Exclui todas as escalas pendentes existentes (para evitar duplicatas)
+      // Exclui todas as escalas pendentes existentes
       for (const docSnap of pendentesSnap.docs) {
         await deleteDoc(doc(db, "escalasPendentes", docSnap.id));
       }
 
-      // Agora gera uma nova sugestão
       await gerarNovaSugestao();
       await carregarEscalasPendentes();
     };
@@ -148,7 +179,6 @@
         const dataStr = dataFuturo.toISOString().split('T')[0];
         const diaSemana = dataFuturo.getDay();
 
-        // Verifica se já existe pendente ou aprovada nessa data
         const qPend = await getDocs(query(collection(db, "escalasPendentes"), where("data", "==", dataStr)));
         const jaAprovada = escalasAprovadas.some(e => e.data === dataStr);
 
@@ -169,7 +199,6 @@
           }
         }
 
-        // Completa com base no score
         if (musicasSelecionadas.length < cultoMatch.numMusicas) {
           const restantes = cultoMatch.numMusicas - musicasSelecionadas.length;
 
@@ -243,7 +272,6 @@
 
       const escala = snap.data();
 
-      // Atualiza estatísticas das músicas
       for (const musica of escala.musicas || []) {
         const musRef = todasMusicas.find(m => m.titulo === musica.titulo);
         if (musRef?.id) {
@@ -274,7 +302,7 @@
 
     window.onload = async () => {
       await carregarDadosBase();
-      await carregarEscalasPendentes();   // ← Agora só carrega, não gera mais automaticamente
+      await carregarEscalasPendentes();
     };
   </script>
 </head>

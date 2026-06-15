@@ -104,7 +104,6 @@
           </div>`;
       });
 
-      // Botão para adicionar mais uma música
       container.innerHTML += `
         <button onclick="adicionarNovaMusica()" class="btn-adicionar">
           <ion-icon name="add-circle-outline"></ion-icon> Adicionar outra música
@@ -173,7 +172,7 @@
 
       if (!tempCarregado) {
         if (isNovaEscala || musicasSelecionadas.length === 0) {
-          musicasSelecionadas = [null]; // Começa com 1 slot vazio
+          musicasSelecionadas = [null];
         } else if (escalaId) {
           let docRef = doc(db, "escalasPendentes", escalaId);
           let docSnap = await getDoc(docRef);
@@ -210,7 +209,7 @@
       const dados = {
         data: document.getElementById('data').value,
         tipoCulto: tipoCultoFinal,
-        numMusicas: musicasSelecionadas.filter(Boolean).length, // salva a quantidade real
+        numMusicas: musicasSelecionadas.filter(Boolean).length,
         musicas: musicasSelecionadas.filter(Boolean),
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
@@ -231,6 +230,13 @@
         window.location.href = "index.html";
       } catch (e) {
         alert("Erro: " + e.message);
+      }
+    };
+
+    window.cancelarEdicao = function() {
+      if (confirm("Deseja cancelar as alterações?")) {
+        sessionStorage.removeItem('escalaEmEdicao');
+        window.history.back();
       }
     };
 
@@ -291,7 +297,7 @@
       <textarea id="observacoes" placeholder="Observações opcionais..."></textarea>
 
       <button class="btn-salvar" onclick="salvarAlteracoes()">Salvar Alterações</button>
-      <button class="btn-cancelar" onclick="window.history.back()">Cancelar</button>
+      <button class="btn-cancelar" onclick="cancelarEdicao()">Cancelar</button>
       <button id="btn-excluir" class="btn-excluir" onclick="excluirEscala()" style="display:none;">🗑️ Excluir Escala</button>
     </div>
   </div>

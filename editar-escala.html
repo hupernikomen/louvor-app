@@ -91,13 +91,12 @@
       container.innerHTML = '';
 
       musicasSelecionadas.forEach((musica, index) => {
-        const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Nenhuma música selecionada';
+        const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Clique para selecionar uma música...';
         container.innerHTML += `
           <div class="musica-slot">
             <label><strong>${index + 1}ª Música</strong></label>
-            <div class="musica-row">
-              <div class="musica-nome">${nome}</div>
-              <button onclick="abrirSelecaoMusica(${index})" class="btn-selecionar">Selecionar</button>
+            <div onclick="abrirSelecaoMusica(${index})" class="musica-campo">
+              ${nome}
             </div>
           </div>`;
       });
@@ -263,37 +262,22 @@
     .personalizar-container { margin-top: 8px; display: none; }
 
     .musica-slot { margin-bottom: 1.6rem; }
-    .musica-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-    .musica-nome {
-      flex: 1;
+    .musica-campo {
       padding: 14px 16px;
       background: #f8f9fa;
       border: 2px solid #e9ecef;
       border-radius: 10px;
-      font-size: 1rem;
       min-height: 52px;
       display: flex;
       align-items: center;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .btn-selecionar {
-      padding: 12px 18px;
-      background: #3498db;
-      color: white;
-      border: none;
-      border-radius: 10px;
       cursor: pointer;
-      font-weight: 500;
-      white-space: nowrap;
-      flex-shrink: 0;
+      transition: all 0.2s;
     }
+    .musica-campo:hover {
+      border-color: #3498db;
+      background: #f1f8ff;
+    }
+
     .btn-adicionar {
       padding: 12px 20px;
       background: #27ae60;

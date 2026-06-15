@@ -22,6 +22,7 @@
     let cultosFixos = [];
     let isNovaEscala = false;
     let statusOriginal = "pendente";
+    let musicasSelecionadas = [];   // Array de objetos das músicas escolhidas
 
     onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "hupcontato@gmail.com") {
@@ -51,7 +52,6 @@
     async function carregarTodasMusicas() {
       const snapshot = await getDocs(collection(db, "musicas"));
       todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
       todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
     }
 
@@ -89,7 +89,7 @@
         const culto = cultosFixos.find(c => c.nome === valor);
         if (culto) {
           document.getElementById('numMusicas').value = culto.numMusicas;
-          renderizarMusicas(culto.numMusicas);
+          definirQuantidadeMusicas(culto.numMusicas);
         }
       }
     }
@@ -101,31 +101,67 @@
         container.style.display = 'block';
       } else {
         container.style.display = 'none';
-        renderizarMusicas(parseInt(valor) || 5);
+        definirQuantidadeMusicas(parseInt(valor) || 5);
       }
     }
 
-    function renderizarMusicas(numMusicas = 5) {
+    function definirQuantidadeMusicas(num) {
+      musicasSelecionadas = musicasSelecionadas.slice(0, num);
+      while (musicasSelecionadas.length < num) {
+        musicasSelecionadas.push(null);
+      }
+      renderizarMusicas();
+    }
+
+    function renderizarMusicas() {
       const container = document.getElementById('musicasContainer');
       container.innerHTML = '';
-      for (let i = 0; i < numMusicas; i++) {
-        const musicaAtual = escalaAtual?.musicas?.[i] || {};
+
+      musicasSelecionadas.forEach((musica, index) => {
+        const nomeMusica = musica ? 
+          `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 
+          'Nenhuma música selecionada';
+
         container.innerHTML += `
-          <div class="musica-edit">
-            <label><strong>${i + 1}ª Música</strong></label>
-            <select class="select-musica">
-              <option value="">Selecione uma música...</option>
-              ${todasMusicas.map(mus => {
-                const tags = mus.tags ? ` [${mus.tags}]` : '';
-                return `
-                  <option value="${mus.id}" ${mus.titulo === musicaAtual.titulo ? 'selected' : ''}>
-                    ${mus.titulo} ${mus.tom ? `(${mus.tom})` : ''}${tags}
-                  </option>
-                `;
-              }).join('')}
-            </select>
+          <div class="musica-slot">
+            <label><strong>${index + 1}ª Música</strong></label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <div style="flex:1; padding:12px; background:#f8f9fa; border-radius:10px; border:2px solid #e9ecef;">
+                ${nomeMusica}
+              </div>
+              <button onclick="abrirSelecaoMusica(${index})" class="btn-selecionar">
+                <ion-icon name="search-outline"></ion-icon> Selecionar
+              </button>
+            </div>
           </div>
         `;
+      });
+    }
+
+    window.abrirSelecaoMusica = function(slotIndex) {
+      const returnUrl = encodeURIComponent(window.location.href);
+      window.location.href = `selecionar-musica.html?slot=${slotIndex}&return=${returnUrl}`;
+    };
+
+    // Captura retorno da página de seleção
+    function verificarRetornoSelecao() {
+      const params = new URLSearchParams(window.location.search);
+      const musicaId = params.get('musicaId');
+      const slot = parseInt(params.get('slot'));
+
+      if (musicaId && slot !== null) {
+        const musica = todasMusicas.find(m => m.id === musicaId);
+        if (musica) {
+          musicasSelecionadas[slot] = {
+            titulo: musica.titulo,
+            tom: musica.tom
+          };
+          renderizarMusicas();
+
+          // Limpa os parâmetros da URL
+          const newUrl = window.location.pathname + window.location.search.replace(/(\?|&)musicaId=[^&]*/, '').replace(/(\?|&)slot=[^&]*/, '');
+          window.history.replaceState({}, '', newUrl);
+        }
       }
     }
 
@@ -167,6 +203,7 @@
 
       if (isNovaEscala) {
         escalaAtual = { data: "", tipoCulto: "", numMusicas: 5, musicas: [], equipe: [], observacoes: "" };
+        musicasSelecionadas = new Array(5).fill(null);
         statusOriginal = "pendente";
       } else if (escalaId) {
         let docRef = doc(db, "escalasPendentes", escalaId);
@@ -179,17 +216,19 @@
 
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
+          musicasSelecionadas = escalaAtual.musicas || [];
           statusOriginal = escalaAtual.status || "pendente";
         }
       }
 
       document.getElementById('data').value = escalaAtual.data || '';
       document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
-      document.getElementById('numMusicas').value = escalaAtual.numMusicas || '';
+      document.getElementById('numMusicas').value = escalaAtual.numMusicas || 5;
       document.getElementById('observacoes').value = escalaAtual.observacoes || '';
 
-      renderizarMusicas(escalaAtual.numMusicas || 5);
+      renderizarMusicas();
       renderizarEquipe();
+      verificarRetornoSelecao();
 
       document.getElementById('btn-excluir').style.display = isNovaEscala ? 'none' : 'block';
     }
@@ -207,11 +246,6 @@
         if (!numMusicasFinal || numMusicasFinal < 1) return alert("Digite uma quantidade válida de músicas.");
       }
 
-      const musicasSelecionadas = Array.from(document.querySelectorAll('.select-musica'))
-        .map(select => todasMusicas.find(m => m.id === select.value))
-        .filter(Boolean)
-        .map(m => ({ titulo: m.titulo, tom: m.tom }));
-
       const equipeSalvar = todosMembros
         .filter((_, index) => {
           const checkbox = document.querySelector(`.switch-input[data-index="${index}"]`);
@@ -223,7 +257,7 @@
         data: document.getElementById('data').value,
         tipoCulto: tipoCultoFinal,
         numMusicas: numMusicasFinal,
-        musicas: musicasSelecionadas,
+        musicas: musicasSelecionadas.filter(Boolean),
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
         status: statusOriginal,
@@ -250,15 +284,14 @@
     };
 
     window.excluirEscala = async function () {
-      if (!confirm("⚠️ Tem certeza que deseja excluir esta escala permanentemente?\n\nEsta ação não pode ser desfeita.")) return;
-
+      if (!confirm("⚠️ Tem certeza que deseja excluir esta escala permanentemente?")) return;
       try {
         await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
         await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-        alert("🗑️ Escala excluída com sucesso!");
+        alert("🗑️ Escala excluída!");
         setTimeout(() => window.history.back(), 800);
       } catch (e) {
-        alert("Erro ao excluir escala: " + e.message);
+        alert("Erro ao excluir: " + e.message);
       }
     };
 
@@ -272,102 +305,18 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: system-ui, sans-serif;
-      background: #fff;
-      min-height: 100vh;
-      padding-bottom: 2rem;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: .5rem;
-    }
-    .card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    label {
-      display: block;
-      margin: 1.2rem 0 0.5rem;
-      font-weight: 600;
-      color: #4a5568;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 0.9rem;
-      border: 2px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 1rem;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #4299e1;
-      outline: none;
-    }
-    .personalizar-container {
-      margin-top: 8px;
-      display: none;
-    }
-    .equipe-grid {
-      display: grid;
-      gap: 1rem;
-      margin: 1.5rem 0;
-    }
-    .membro-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background: #f7fafc;
-      border-radius: 10px;
-      border: 2px solid #edf2f7;
-    }
-    .membro-nome { font-weight: 600; color: #2d3748; }
-    .membro-funcao { color: #718096; font-size: 0.9rem; }
-    .switch-container {
-      position: relative;
-      width: 50px;
-      height: 26px;
-    }
-    .switch-input { opacity: 0; width: 0; height: 0; }
-    .switch-toggle {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #cbd5e0;
-      border-radius: 26px;
-      cursor: pointer;
-    }
-    .switch-toggle::before {
-      content: "";
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.3s;
-    }
-    .switch-input:checked + .switch-toggle {
-      background: #48bb78;
-    }
-    .switch-input:checked + .switch-toggle::before {
-      transform: translateX(24px);
-    }
-    .musica-edit { margin-bottom: 1.5rem; }
-    button {
-      width: 100%;
-      padding: 1rem;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
+    body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; padding-bottom: 2rem; }
+    .container { max-width: 1000px; margin: 0 auto; padding: .5rem; }
+    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1rem; }
+    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; color: #4a5568; }
+    input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; }
+    input:focus, select:focus, textarea:focus { border-color: #4299e1; outline: none; }
+    .personalizar-container { margin-top: 8px; display: none; }
+    .equipe-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
+    .membro-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7; }
+    .musica-slot { margin-bottom: 1.8rem; }
+    .btn-selecionar { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
     .btn-excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-top: 10px; }

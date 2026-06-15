@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selecionar Música</title>
+
+  <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f9fa;
+      color: #333;
+      min-height: 100vh;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+
+    .search-bar {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #3498db;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .musica-item {
+      background: white;
+      padding: 16px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .musica-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .musica-titulo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    .musica-info {
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 6px;
+    }
+    .tags {
+      margin-top: 8px;
+    }
+    .tag {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-right: 6px;
+    }
+  </style>
+
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    let todasMusicas = [];
+    let slotIndex = null;   // Qual posição da música está sendo editada (0, 1, 2...)
+
+    async function carregarMusicas() {
+      const snapshot = await getDocs(collection(db, "musicas"));
+      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+      renderizarMusicas(todasMusicas);
+    }
+
+    function renderizarMusicas(musicas) {
+      const container = document.getElementById('listaMusicas');
+      container.innerHTML = '';
+
+      if (musicas.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">Nenhuma música encontrada.</p>';
+        return;
+      }
+
+      musicas.forEach(musica => {
+        const div = document.createElement('div');
+        div.className = 'musica-item';
+        div.innerHTML = `
+          <div class="musica-titulo">${musica.titulo}</div>
+          <div class="musica-info">
+            ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
+          </div>
+          ${musica.tags ? `
+            <div class="tags">
+              ${musica.tags.split(',').map(tag => 
+                `<span class="tag">${tag.trim()}</span>`
+              ).join('')}
+            </div>
+          ` : ''}
+        `;
+        div.onclick = () => selecionarMusica(musica);
+        container.appendChild(div);
+      });
+    }
+
+    function selecionarMusica(musica) {
+      // Retorna para editar-escala passando o ID da música e o slot
+      const urlParams = new URLSearchParams(window.location.search);
+      const returnUrl = urlParams.get('return') || 'editar-escala.html';
+      
+      window.location.href = `${returnUrl}?slot=${slotIndex}&musicaId=${musica.id}`;
+    }
+
+    // Filtro de busca
+    document.getElementById('busca').addEventListener('input', (e) => {
+      const termo = e.target.value.toLowerCase().trim();
+      if (!termo) {
+        renderizarMusicas(todasMusicas);
+        return;
+      }
+      const filtradas = todasMusicas.filter(m => 
+        m.titulo.toLowerCase().includes(termo) ||
+        (m.tags && m.tags.toLowerCase().includes(termo))
+      );
+      renderizarMusicas(filtradas);
+    });
+
+    window.onload = async () => {
+      const params = new URLSearchParams(window.location.search);
+      slotIndex = parseInt(params.get('slot')) || 0;
+
+      await carregarMusicas();
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div id="header-placeholder"></div>
+
+    <h2 style="margin: 20px 0 15px;">Selecionar Música</h2>
+    <input type="text" id="busca" class="search-bar" placeholder="🔍 Buscar por título ou tag...">
+
+    <div id="listaMusicas"></div>
+  </div>
+
+  <script src="header.js"></script>
+  <script>carregarHeader('Selecionar Música');</script>
+</body>
+</html>

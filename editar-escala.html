@@ -96,9 +96,7 @@
           <div class="musica-slot">
             <label><strong>${index + 1}ª Música</strong></label>
             <div class="musica-row">
-              <div class="musica-nome">
-                ${nome}
-              </div>
+              <div class="musica-nome">${nome}</div>
               <button onclick="abrirSelecaoMusica(${index})" class="btn-selecionar">Selecionar</button>
             </div>
           </div>`;
@@ -261,13 +259,14 @@
     .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; }
     label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; }
     input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
+
     .personalizar-container { margin-top: 8px; display: none; }
 
-    .musica-slot { margin-bottom: 1.5rem; }
+    .musica-slot { margin-bottom: 1.6rem; }
     .musica-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
     }
     .musica-nome {
@@ -276,16 +275,16 @@
       background: #f8f9fa;
       border: 2px solid #e9ecef;
       border-radius: 10px;
+      font-size: 1rem;
       min-height: 52px;
       display: flex;
       align-items: center;
-      font-size: 1rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .btn-selecionar {
-      padding: 12px 20px;
+      padding: 12px 18px;
       background: #3498db;
       color: white;
       border: none;
@@ -306,8 +305,9 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 8px;
     }
+
     button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; margin-top: 1rem; cursor: pointer; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }

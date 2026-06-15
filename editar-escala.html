@@ -22,7 +22,7 @@
     let cultosFixos = [];
     let isNovaEscala = false;
     let statusOriginal = "pendente";
-    let musicasSelecionadas = [];   // Array de objetos das músicas escolhidas
+    let musicasSelecionadas = [];
 
     onAuthStateChanged(auth, (user) => {
       if (!user || user.email !== "hupcontato@gmail.com") {
@@ -87,10 +87,7 @@
       } else {
         container.style.display = 'none';
         const culto = cultosFixos.find(c => c.nome === valor);
-        if (culto) {
-          document.getElementById('numMusicas').value = culto.numMusicas;
-          definirQuantidadeMusicas(culto.numMusicas);
-        }
+        if (culto) definirQuantidadeMusicas(culto.numMusicas);
       }
     }
 
@@ -126,11 +123,11 @@
           <div class="musica-slot">
             <label><strong>${index + 1}ª Música</strong></label>
             <div style="display:flex; gap:10px; align-items:center;">
-              <div style="flex:1; padding:12px; background:#f8f9fa; border-radius:10px; border:2px solid #e9ecef;">
+              <div style="flex:1; padding:14px; background:#f8f9fa; border-radius:10px; border:2px solid #e9ecef; min-height:52px;">
                 ${nomeMusica}
               </div>
               <button onclick="abrirSelecaoMusica(${index})" class="btn-selecionar">
-                <ion-icon name="search-outline"></ion-icon> Selecionar
+                Selecionar
               </button>
             </div>
           </div>
@@ -139,29 +136,32 @@
     }
 
     window.abrirSelecaoMusica = function(slotIndex) {
-      const returnUrl = encodeURIComponent(window.location.href);
-      window.location.href = `selecionar-musica.html?slot=${slotIndex}&return=${returnUrl}`;
+      const currentUrl = encodeURIComponent(window.location.href);
+      window.location.href = `selecionar-musica.html?slot=${slotIndex}&return=${currentUrl}`;
     };
 
-    // Captura retorno da página de seleção
     function verificarRetornoSelecao() {
       const params = new URLSearchParams(window.location.search);
       const musicaId = params.get('musicaId');
       const slot = parseInt(params.get('slot'));
 
-      if (musicaId && slot !== null) {
+      if (musicaId && !isNaN(slot)) {
         const musica = todasMusicas.find(m => m.id === musicaId);
         if (musica) {
-          musicasSelecionadas[slot] = {
-            titulo: musica.titulo,
-            tom: musica.tom
-          };
+          musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
           renderizarMusicas();
-
-          // Limpa os parâmetros da URL
-          const newUrl = window.location.pathname + window.location.search.replace(/(\?|&)musicaId=[^&]*/, '').replace(/(\?|&)slot=[^&]*/, '');
-          window.history.replaceState({}, '', newUrl);
         }
+
+        // Limpa os parâmetros da URL
+        let cleanUrl = window.location.pathname;
+        const search = window.location.search
+          .replace(/[?&]musicaId=[^&]*/g, '')
+          .replace(/[?&]slot=[^&]*/g, '')
+          .replace(/^[?&]/, '?')
+          .replace(/[?&]$/, '');
+
+        if (search && search !== '?') cleanUrl += search;
+        window.history.replaceState({}, document.title, cleanUrl);
       }
     }
 
@@ -216,15 +216,15 @@
 
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
-          musicasSelecionadas = escalaAtual.musicas || [];
+          musicasSelecionadas = [...(escalaAtual.musicas || [])];
           statusOriginal = escalaAtual.status || "pendente";
         }
       }
 
-      document.getElementById('data').value = escalaAtual.data || '';
-      document.getElementById('tipoCulto').value = escalaAtual.tipoCulto || '';
-      document.getElementById('numMusicas').value = escalaAtual.numMusicas || 5;
-      document.getElementById('observacoes').value = escalaAtual.observacoes || '';
+      document.getElementById('data').value = escalaAtual?.data || '';
+      document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
+      document.getElementById('numMusicas').value = escalaAtual?.numMusicas || 5;
+      document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
 
       renderizarMusicas();
       renderizarEquipe();
@@ -261,7 +261,7 @@
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
         status: statusOriginal,
-        criadoEm: escalaAtual.criadoEm || new Date().toISOString()
+        criadoEm: escalaAtual?.criadoEm || new Date().toISOString()
       };
 
       try {
@@ -288,7 +288,7 @@
       try {
         await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
         await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-        alert("🗑️ Escala excluída!");
+        alert("🗑️ Escala excluída com sucesso!");
         setTimeout(() => window.history.back(), 800);
       } catch (e) {
         alert("Erro ao excluir: " + e.message);
@@ -314,12 +314,20 @@
     .personalizar-container { margin-top: 8px; display: none; }
     .equipe-grid { display: grid; gap: 1rem; margin: 1.5rem 0; }
     .membro-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f7fafc; border-radius: 10px; border: 2px solid #edf2f7; }
+    .membro-nome { font-weight: 600; color: #2d3748; }
+    .membro-funcao { color: #718096; font-size: 0.9rem; }
     .musica-slot { margin-bottom: 1.8rem; }
-    .btn-selecionar { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    .btn-selecionar { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 500; }
     button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
     .btn-excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; margin-top: 10px; }
+    .switch-container { position: relative; width: 50px; height: 26px; }
+    .switch-input { opacity: 0; width: 0; height: 0; }
+    .switch-toggle { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #cbd5e0; border-radius: 26px; cursor: pointer; }
+    .switch-toggle::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+    .switch-input:checked + .switch-toggle { background: #48bb78; }
+    .switch-input:checked + .switch-toggle::before { transform: translateX(24px); }
   </style>
 </head>
 

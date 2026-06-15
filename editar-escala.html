@@ -36,8 +36,6 @@
         data: document.getElementById('data').value,
         tipoCulto: document.getElementById('tipoCulto').value,
         tipoCultoPersonalizado: document.getElementById('tipoCultoPersonalizado').value,
-        numMusicas: document.getElementById('numMusicas').value,
-        numMusicasPersonalizado: document.getElementById('numMusicasPersonalizado').value,
         observacoes: document.getElementById('observacoes').value,
         musicasSelecionadas: musicasSelecionadas
       }));
@@ -50,8 +48,6 @@
       document.getElementById('data').value = estado.data || '';
       document.getElementById('tipoCulto').value = estado.tipoCulto || '';
       document.getElementById('tipoCultoPersonalizado').value = estado.tipoCultoPersonalizado || '';
-      document.getElementById('numMusicas').value = estado.numMusicas || 5;
-      document.getElementById('numMusicasPersonalizado').value = estado.numMusicasPersonalizado || '';
       document.getElementById('observacoes').value = estado.observacoes || '';
       if (estado.musicasSelecionadas) musicasSelecionadas = estado.musicasSelecionadas;
       return true;
@@ -84,38 +80,16 @@
       select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
     }
 
-    function preencherNumMusicas() {
-      const select = document.getElementById('numMusicas');
-      select.innerHTML = '<option value="">Selecione a quantidade...</option>';
-      const nums = [...new Set(cultosFixos.map(c => c.numMusicas))].sort((a,b)=>a-b);
-      nums.forEach(num => select.innerHTML += `<option value="${num}">${num} músicas</option>`);
-      select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
-    }
-
     function handleTipoCultoChange() {
       const valor = document.getElementById('tipoCulto').value;
       document.getElementById('personalizarTipoContainer').style.display = valor === "personalizar" ? 'block' : 'none';
-      if (valor !== "personalizar") {
-        const culto = cultosFixos.find(c => c.nome === valor);
-        if (culto) definirQuantidadeMusicas(culto.numMusicas);
-      }
-    }
-
-    function handleNumMusicasChange() {
-      const valor = document.getElementById('numMusicas').value;
-      document.getElementById('personalizarNumContainer').style.display = valor === "personalizar" ? 'block' : 'none';
-      if (valor !== "personalizar") definirQuantidadeMusicas(parseInt(valor) || 5);
-    }
-
-    function definirQuantidadeMusicas(num) {
-      musicasSelecionadas = musicasSelecionadas.slice(0, num);
-      while (musicasSelecionadas.length < num) musicasSelecionadas.push(null);
-      renderizarMusicas();
+      salvarEstadoTemporario();
     }
 
     function renderizarMusicas() {
       const container = document.getElementById('musicasContainer');
       container.innerHTML = '';
+
       musicasSelecionadas.forEach((musica, index) => {
         const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Nenhuma música selecionada';
         container.innerHTML += `
@@ -129,7 +103,19 @@
             </div>
           </div>`;
       });
+
+      // Botão para adicionar mais uma música
+      container.innerHTML += `
+        <button onclick="adicionarNovaMusica()" class="btn-adicionar">
+          <ion-icon name="add-circle-outline"></ion-icon> Adicionar outra música
+        </button>`;
     }
+
+    window.adicionarNovaMusica = function() {
+      musicasSelecionadas.push(null);
+      renderizarMusicas();
+      salvarEstadoTemporario();
+    };
 
     window.abrirSelecaoMusica = function(slotIndex) {
       salvarEstadoTemporario();
@@ -148,7 +134,6 @@
           renderizarMusicas();
           salvarEstadoTemporario();
         }
-        // Limpa parâmetros da URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
@@ -183,13 +168,12 @@
       getUrlParams();
       await carregarDados();
       preencherTipoCulto();
-      preencherNumMusicas();
 
       const tempCarregado = carregarEstadoTemporario();
 
       if (!tempCarregado) {
-        if (isNovaEscala) {
-          musicasSelecionadas = new Array(5).fill(null);
+        if (isNovaEscala || musicasSelecionadas.length === 0) {
+          musicasSelecionadas = [null]; // Começa com 1 slot vazio
         } else if (escalaId) {
           let docRef = doc(db, "escalasPendentes", escalaId);
           let docSnap = await getDoc(docRef);
@@ -199,14 +183,13 @@
           }
           if (docSnap.exists()) {
             escalaAtual = docSnap.data();
-            musicasSelecionadas = [...(escalaAtual.musicas || [])];
+            musicasSelecionadas = [...(escalaAtual.musicas || [null])];
           }
         }
       }
 
-      document.getElementById('data').value = escalaAtual?.data || document.getElementById('data').value || '';
+      document.getElementById('data').value = escalaAtual?.data || '';
       document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
-      document.getElementById('numMusicas').value = escalaAtual?.numMusicas || 5;
       document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
 
       renderizarMusicas();
@@ -217,14 +200,8 @@
     window.salvarAlteracoes = async () => {
       salvarEstadoTemporario();
 
-      // ... (código de salvamento mantido igual)
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
       if (tipoCultoFinal === "personalizar") tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
-
-      let numMusicasFinal = parseInt(document.getElementById('numMusicas').value) || 5;
-      if (document.getElementById('numMusicas').value === "personalizar") {
-        numMusicasFinal = parseInt(document.getElementById('numMusicasPersonalizado').value);
-      }
 
       const equipeSalvar = todosMembros
         .filter((_, i) => document.querySelector(`.switch-input[data-index="${i}"]`)?.checked)
@@ -233,7 +210,7 @@
       const dados = {
         data: document.getElementById('data').value,
         tipoCulto: tipoCultoFinal,
-        numMusicas: numMusicasFinal,
+        numMusicas: musicasSelecionadas.filter(Boolean).length, // salva a quantidade real
         musicas: musicasSelecionadas.filter(Boolean),
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
@@ -250,7 +227,7 @@
           await updateDoc(docRef, dados);
         }
         sessionStorage.removeItem('escalaEmEdicao');
-        alert("✅ Salvo com sucesso!");
+        alert("✅ Escala salva com sucesso!");
         window.location.href = "index.html";
       } catch (e) {
         alert("Erro: " + e.message);
@@ -280,7 +257,11 @@
     input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
     .personalizar-container { margin-top: 8px; display: none; }
     .musica-slot { margin-bottom: 1.5rem; }
-    .btn-selecionar { padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 10px; cursor: pointer; }
+    .btn-selecionar, .btn-adicionar { 
+      padding: 12px 20px; background: #3498db; color: white; border: none; border-radius: 10px; 
+      cursor: pointer; font-weight: 500; 
+    }
+    .btn-adicionar { background: #27ae60; width: auto; display: inline-flex; align-items: center; gap: 8px; }
     button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; margin-top: 1rem; cursor: pointer; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
@@ -299,12 +280,6 @@
       <select id="tipoCulto" onchange="handleTipoCultoChange()"></select>
       <div id="personalizarTipoContainer" class="personalizar-container">
         <input type="text" id="tipoCultoPersonalizado" placeholder="Digite o nome do culto">
-      </div>
-
-      <label>Número de Músicas</label>
-      <select id="numMusicas" onchange="handleNumMusicasChange()"></select>
-      <div id="personalizarNumContainer" class="personalizar-container">
-        <input type="number" id="numMusicasPersonalizado" min="1" max="10" placeholder="Quantidade de músicas">
       </div>
 
       <div id="equipeContainer"></div>

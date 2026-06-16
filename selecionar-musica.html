@@ -39,6 +39,7 @@
     .musica-item:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      border: 2px solid #3498db;
     }
     .musica-titulo {
       font-size: 1.1rem;
@@ -62,6 +63,19 @@
       font-size: 0.8rem;
       margin-right: 6px;
     }
+    .btn-fechar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 30px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
   </style>
 
   <script type="module">
@@ -69,7 +83,7 @@
     import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
     let todasMusicas = [];
-    let slotIndex = null;   // Qual posição da música está sendo editada (0, 1, 2...)
+    let slotIndex = 0;
 
     async function carregarMusicas() {
       const snapshot = await getDocs(collection(db, "musicas"));
@@ -97,9 +111,7 @@
           </div>
           ${musica.tags ? `
             <div class="tags">
-              ${musica.tags.split(',').map(tag => 
-                `<span class="tag">${tag.trim()}</span>`
-              ).join('')}
+              ${musica.tags.split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
             </div>
           ` : ''}
         `;
@@ -109,11 +121,15 @@
     }
 
     function selecionarMusica(musica) {
-      // Retorna para editar-escala passando o ID da música e o slot
-      const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get('return') || 'editar-escala.html';
-      
-      window.location.href = `${returnUrl}?slot=${slotIndex}&musicaId=${musica.id}`;
+      // Envia mensagem de volta para a janela principal
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'musicaSelecionada',
+          slot: slotIndex,
+          musica: musica
+        }, '*');
+      }
+      window.close(); // Fecha o popup
     }
 
     // Filtro de busca
@@ -146,6 +162,10 @@
     <input type="text" id="busca" class="search-bar" placeholder="🔍 Buscar por título ou tag...">
 
     <div id="listaMusicas"></div>
+
+    <button onclick="window.close()" class="btn-fechar">
+      Fechar
+    </button>
   </div>
 
   <script src="header.js"></script>

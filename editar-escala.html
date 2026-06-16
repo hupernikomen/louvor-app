@@ -31,46 +31,6 @@
       isNovaEscala = params.get('nova') === 'true';
     }
 
-    // ==================== ESTADO TEMPORÁRIO ====================
-    function salvarEstadoTemporario() {
-      const equipeSelecionada = Array.from(document.querySelectorAll('.switch-input:checked'))
-                                    .map(cb => parseInt(cb.dataset.index));
-
-      sessionStorage.setItem('escalaEmEdicao', JSON.stringify({
-        data: document.getElementById('data').value,
-        tipoCulto: document.getElementById('tipoCulto').value,
-        tipoCultoPersonalizado: document.getElementById('tipoCultoPersonalizado').value,
-        observacoes: document.getElementById('observacoes').value,
-        musicasSelecionadas: musicasSelecionadas,
-        equipeSelecionada: equipeSelecionada
-      }));
-    }
-
-    function carregarEstadoTemporario() {
-      const salvo = sessionStorage.getItem('escalaEmEdicao');
-      if (!salvo) return false;
-
-      const estado = JSON.parse(salvo);
-      
-      document.getElementById('data').value = estado.data || '';
-      document.getElementById('tipoCulto').value = estado.tipoCulto || '';
-      document.getElementById('tipoCultoPersonalizado').value = estado.tipoCultoPersonalizado || '';
-      document.getElementById('observacoes').value = estado.observacoes || '';
-
-      if (estado.musicasSelecionadas) musicasSelecionadas = estado.musicasSelecionadas;
-
-      // Restaurar equipe
-      if (estado.equipeSelecionada) {
-        setTimeout(() => {
-          estado.equipeSelecionada.forEach(index => {
-            const checkbox = document.querySelector(`.switch-input[data-index="${index}"]`);
-            if (checkbox) checkbox.checked = true;
-          });
-        }, 300);
-      }
-      return true;
-    }
-
     async function carregarDados() {
       await Promise.all([carregarCultosFixos(), carregarTodasMusicas(), carregarTodosMembros()]);
     }
@@ -101,7 +61,6 @@
     function handleTipoCultoChange() {
       const valor = document.getElementById('tipoCulto').value;
       document.getElementById('personalizarTipoContainer').style.display = valor === "personalizar" ? 'block' : 'none';
-      salvarEstadoTemporario();
     }
 
     function renderizarMusicas() {
@@ -128,29 +87,32 @@
     window.adicionarNovaMusica = function() {
       musicasSelecionadas.push(null);
       renderizarMusicas();
-      salvarEstadoTemporario();
     };
 
     window.abrirSelecaoMusica = function(slotIndex) {
-      salvarEstadoTemporario();
-      window.location.href = `selecionar-musica.html?slot=${slotIndex}`;
-    };
+      const width = 800;
+      const height = 700;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
 
-    function verificarRetornoSelecao() {
-      const params = new URLSearchParams(window.location.search);
-      const musicaId = params.get('musicaId');
-      const slot = parseInt(params.get('slot'));
+      const popup = window.open(
+        `selecionar-musica.html?slot=${slotIndex}`,
+        'SelecionarMusica',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+      );
 
-      if (musicaId && !isNaN(slot)) {
-        const musica = todasMusicas.find(m => m.id === musicaId);
-        if (musica) {
-          musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
-          renderizarMusicas();
-          salvarEstadoTemporario();
+      // Comunicação de volta do popup
+      window.addEventListener('message', function handler(e) {
+        if (e.data && e.data.type === 'musicaSelecionada') {
+          const { slot, musica } = e.data;
+          if (musica) {
+            musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
+            renderizarMusicas();
+          }
+          window.removeEventListener('message', handler);
         }
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
+      });
+    };
 
     function renderizarEquipe() {
       const container = document.getElementById('equipeContainer');
@@ -183,22 +145,18 @@
       await carregarDados();
       preencherTipoCulto();
 
-      const tempCarregado = carregarEstadoTemporario();
-
-      if (!tempCarregado) {
-        if (isNovaEscala || musicasSelecionadas.length === 0) {
-          musicasSelecionadas = [null];
-        } else if (escalaId) {
-          let docRef = doc(db, "escalasPendentes", escalaId);
-          let docSnap = await getDoc(docRef);
-          if (!docSnap.exists()) {
-            docRef = doc(db, "escalasCulto", escalaId);
-            docSnap = await getDoc(docRef);
-          }
-          if (docSnap.exists()) {
-            escalaAtual = docSnap.data();
-            musicasSelecionadas = [...(escalaAtual.musicas || [null])];
-          }
+      if (isNovaEscala || musicasSelecionadas.length === 0) {
+        musicasSelecionadas = [null];
+      } else if (escalaId) {
+        let docRef = doc(db, "escalasPendentes", escalaId);
+        let docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          docRef = doc(db, "escalasCulto", escalaId);
+          docSnap = await getDoc(docRef);
+        }
+        if (docSnap.exists()) {
+          escalaAtual = docSnap.data();
+          musicasSelecionadas = [...(escalaAtual.musicas || [null])];
         }
       }
 
@@ -208,12 +166,9 @@
 
       renderizarMusicas();
       renderizarEquipe();
-      verificarRetornoSelecao();
     }
 
     window.salvarAlteracoes = async () => {
-      salvarEstadoTemporario();
-
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
       if (tipoCultoFinal === "personalizar") tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
 
@@ -240,7 +195,6 @@
           if (!(await getDoc(docRef)).exists()) docRef = doc(db, "escalasCulto", escalaId);
           await updateDoc(docRef, dados);
         }
-        sessionStorage.removeItem('escalaEmEdicao');
         alert("✅ Escala salva com sucesso!");
         window.location.href = "index.html";
       } catch (e) {
@@ -250,21 +204,17 @@
 
     window.cancelarEdicao = function() {
       if (confirm("Deseja cancelar as alterações?")) {
-        sessionStorage.removeItem('escalaEmEdicao');
         window.history.back();
       }
     };
 
     window.excluirEscala = async function () {
       if (!confirm("Excluir esta escala?")) return;
-      sessionStorage.removeItem('escalaEmEdicao');
       await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
       await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
       alert("Escala excluída!");
       window.history.back();
     };
-
-    document.addEventListener('change', salvarEstadoTemporario);
 
     window.onload = carregarEscala;
   </script>
@@ -276,8 +226,6 @@
     .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; }
     label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; }
     input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
-
-    .personalizar-container { margin-top: 8px; display: none; }
 
     .musica-slot { margin-bottom: 1.6rem; }
     .musica-campo {

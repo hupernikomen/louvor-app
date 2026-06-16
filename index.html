@@ -17,23 +17,23 @@
     let escalasTodas = [];
     let mostrandoAnteriores = false;
 
-    // onAuthStateChanged(auth, (user) => {
-    //   usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
-    //   atualizarMenu(user);
-    // });
+    onAuthStateChanged(auth, (user) => {
+      usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
+      atualizarMenu(user);
+    });
 
-    // function atualizarMenu() {
-    //   const btnLogin = document.getElementById('btnLogin');
-    //   const menuLogado = document.getElementById('menuLogado');
+    function atualizarMenu() {
+      const btnLogin = document.getElementById('btnLogin');
+      const menuLogado = document.getElementById('menuLogado');
 
-    //   if (usuarioLogado) {
-    //     btnLogin.style.display = 'none';
-    //     menuLogado.style.display = 'flex';
-    //   } else {
-    //     btnLogin.style.display = 'inline-block';
-    //     menuLogado.style.display = 'none';
-    //   }
-    // }
+      if (usuarioLogado) {
+        btnLogin.style.display = 'none';
+        menuLogado.style.display = 'flex';
+      } else {
+        btnLogin.style.display = 'inline-block';
+        menuLogado.style.display = 'none';
+      }
+    }
 
     // ==================== ORDENAÇÃO ====================
     function ordenarEscalas(escalas) {

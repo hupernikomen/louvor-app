@@ -121,7 +121,6 @@
     }
 
     function selecionarMusica(musica) {
-      // Envia mensagem de volta para a janela principal
       if (window.opener) {
         window.opener.postMessage({
           type: 'musicaSelecionada',
@@ -129,7 +128,7 @@
           musica: musica
         }, '*');
       }
-      window.close(); // Fecha o popup
+      window.close();
     }
 
     // Filtro de busca
@@ -150,6 +149,7 @@
       const params = new URLSearchParams(window.location.search);
       slotIndex = parseInt(params.get('slot')) || 0;
 
+      // Não faz verificação de login no popup
       await carregarMusicas();
     };
   </script>

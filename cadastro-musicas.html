@@ -33,7 +33,7 @@
       background: white;
       border-radius: 16px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      padding: 1rem;
+      padding: 1.5rem;
       margin-bottom: 2rem;
       border: 1px solid #f0f0f0;
     }
@@ -48,26 +48,27 @@
 
     form {
       display: grid;
-      gap: 1rem;
+      gap: 1.25rem;
     }
 
     input, textarea {
       width: 100%;
       padding: 14px 16px;
-      border: none;
+      border: 2px solid #e9ecef;
       border-radius: 10px;
       font-size: 16px;
-      background: #f9f9f9;
+      background: #fafbfc;
     }
 
     input:focus, textarea:focus {
       outline: none;
-      border: 2px solid #3498db;
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
     }
 
     textarea {
       resize: vertical;
-      min-height: 100px;
+      min-height: 120px;
     }
 
     button[type="submit"] {
@@ -79,40 +80,7 @@
       font-size: 1.1rem;
       font-weight: 600;
       cursor: pointer;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-
-    th, td {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    th {
-      background: linear-gradient(135deg, #3498db, #2980b9);
-      color: white;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .btn-tabela {
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      width: 48px;
-      height: 30px;
-    }
-
-    .btn-tabela.editar {
-      background: linear-gradient(135deg, #f39c12, #e67e22);
-      color: white;
+      margin-top: 1rem;
     }
 
     .btn-excluir {
@@ -125,70 +93,34 @@
       margin-top: 10px;
       width: 100%;
     }
-
-    .tags {
-      font-size: 0.85rem;
-      color: #555;
-      background: #f0f0f0;
-      padding: 4px 8px;
-      border-radius: 12px;
-      display: inline-block;
-      margin: 2px;
-    }
   </style>
 
   <script type="module">
     import { db } from './firebase-config.js';
-    import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { collection, addDoc, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
     const musicasRef = collection(db, "musicas");
     let musicaEditandoId = null;
 
-    async function carregarMusicas() {
-      const tbody = document.querySelector('#tabelaMusicas tbody');
-      tbody.innerHTML = '';
-
-      const snapshot = await getDocs(musicasRef);
-      let musicas = [];
-      snapshot.forEach((docSnap) => {
-        musicas.push({ id: docSnap.id, ...docSnap.data() });
-      });
-
-      musicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-
-      musicas.forEach((m) => {
-        const id = m.id;
-        const tagsHTML = m.tags 
-          ? m.tags.split(',').map(tag => `<span class="tags">${tag.trim()}</span>`).join('') 
-          : '-';
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="font-weight: 400; color: #2c3e50;">${m.titulo}</td>
-          <td style="color: #27ae60; font-weight: 500;">${m.tom || '-'}</td>
-          <td>${tagsHTML}</td>
-          <td style="text-align:center;">
-            <button onclick="editarMusica('${id}')" class="btn-tabela editar" title="Editar">
-              <ion-icon name="create-outline"></ion-icon>
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
     window.editarMusica = async function (id) {
-      const snapshot = await getDocs(musicasRef);
-      const musica = snapshot.docs.find(d => d.id === id).data();
+      try {
+        const snapshot = await getDocs(musicasRef);
+        const musicaDoc = snapshot.docs.find(d => d.id === id);
+        if (!musicaDoc) return;
 
-      document.getElementById('titulo').value = musica.titulo || '';
-      document.getElementById('tom').value = musica.tom || '';
-      document.getElementById('tags').value = musica.tags || '';
-      document.getElementById('observacoes').value = musica.observacoes || '';
+        const musica = musicaDoc.data();
 
-      musicaEditandoId = id;
-      document.querySelector('button[type="submit"]').innerHTML = 'Atualizar Música';
-      document.getElementById('btn-excluir').style.display = 'block';
+        document.getElementById('titulo').value = musica.titulo || '';
+        document.getElementById('tom').value = musica.tom || '';
+        document.getElementById('tags').value = musica.tags || '';
+        document.getElementById('observacoes').value = musica.observacoes || '';
+
+        musicaEditandoId = id;
+        document.querySelector('button[type="submit"]').innerHTML = 'Atualizar Música';
+        document.getElementById('btn-excluir').style.display = 'block';
+      } catch (e) {
+        alert("Erro ao carregar música: " + e.message);
+      }
     };
 
     document.getElementById('formMusica').addEventListener('submit', async (e) => {
@@ -207,19 +139,18 @@
       try {
         if (musicaEditandoId) {
           await updateDoc(doc(db, "musicas", musicaEditandoId), musica);
-          alert("✅ Música atualizada!");
+          alert("✅ Música atualizada com sucesso!");
           musicaEditandoId = null;
           document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
           document.getElementById('btn-excluir').style.display = 'none';
         } else {
           await addDoc(musicasRef, musica);
-          alert("Música cadastrada com sucesso!");
+          alert("✅ Música cadastrada com sucesso!");
         }
 
         e.target.reset();
-        carregarMusicas();
       } catch (error) {
-        alert("❌ Erro: " + error.message);
+        alert("❌ Erro ao salvar: " + error.message);
       }
     });
 
@@ -227,17 +158,18 @@
       if (!musicaEditandoId) return;
       if (!confirm("Excluir esta música permanentemente?")) return;
 
-      await deleteDoc(doc(db, "musicas", musicaEditandoId));
-      alert("Música excluída!");
+      try {
+        await deleteDoc(doc(db, "musicas", musicaEditandoId));
+        alert("✅ Música excluída com sucesso!");
 
-      musicaEditandoId = null;
-      document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
-      document.getElementById('btn-excluir').style.display = 'none';
-      document.getElementById('formMusica').reset();
-      carregarMusicas();
+        musicaEditandoId = null;
+        document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
+        document.getElementById('btn-excluir').style.display = 'none';
+        document.getElementById('formMusica').reset();
+      } catch (error) {
+        alert("❌ Erro ao excluir: " + error.message);
+      }
     };
-
-    window.onload = carregarMusicas;
   </script>
 </head>
 
@@ -261,21 +193,6 @@
           Excluir Música
         </button>
       </form>
-    </div>
-
-    <div class="card">
-      <h2>Músicas Cadastradas</h2>
-      <table id="tabelaMusicas">
-        <thead>
-          <tr>
-            <th>Título</th>
-            <th>Tom</th>
-            <th>Tags</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
     </div>
   </div>
 

@@ -118,7 +118,6 @@
       carregarEscalas(!mostrandoAnteriores);
     };
 
-    // Função para abrir selecionar música
     window.abrirSelecionarMusica = function() {
       const width = 820;
       const height = 720;
@@ -168,7 +167,6 @@
       padding: 1rem;
     }
 
-    /* Botão discreto, pequeno e centralizado */
     .btn-alternar {
       display: block;
       margin: 1px auto 25px auto;
@@ -207,85 +205,23 @@
       border-radius: 16px;
       text-decoration: none;
       font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
     }
 
-    /* ==================== ESTILOS DOS CARDS ==================== */
-    .escala-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-      margin-bottom: 25px;
-      overflow: hidden;
-      border: 1px solid #f0f0f0;
-    }
-
-    .card-header {
-      background: #fff;
-      padding: 14px 22px;
+    .btn-icon {
+      width: 48px;
+      height: 48px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #eee;
-      flex-wrap: wrap;
-      gap: 8px;
+      justify-content: center;
+      font-size: 1.5rem;
+      border-radius: 12px;
+      transition: all 0.2s;
     }
 
-    .tipo-culto {
-      font-size: 0.9rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .data {
-      font-weight: 500;
-      color: #2c3e50;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-    }
-
-    .musicas {
-      padding: 16px 22px;
-    }
-
-    .musica-item {
-      font-size: 0.92rem;
-      border-bottom: 1px solid #f5f5f5;
-    }
-
-    .musica-item:last-child {
-      border-bottom: none;
-    }
-
-    .tom {
-      color: #27ae60;
-      font-weight: 500;
-    }
-
-    .equipe {
-      padding: 0 12px 12px;
-    }
-
-    .membros {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
-    }
-
-    .membro-tag {
-      background: #f7fbff;
-      color: #334155;
-      padding: 6px 10px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-    }
-
-    .observacoes {
-      background: #fff;
-      padding: 10px 22px;
-      border-top: 1px solid #eee;
-      color: #222;
-      font-size: 0.90rem;
+    .btn-icon:hover {
+      background: rgba(52, 152, 219, 0.1);
     }
   </style>
 </head>
@@ -295,9 +231,13 @@
     <h1 style="font-size: 1.2rem; margin: 0;font-weight: 500;"></h1>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
-      <div id="menuLogado" style="display:none; gap:10px;">
-        <a href="menu.html" class="btn-login">Menu</a>
-        <button onclick="abrirSelecionarMusica()" class="btn-login">🎵 Selecionar Música</button>
+      <div id="menuLogado" style="display:none; gap:8px;">
+        <a href="menu.html" class="btn-login btn-icon" title="Menu Principal">
+          <ion-icon name="grid-outline"></ion-icon>
+        </a>
+        <button onclick="abrirSelecionarMusica()" class="btn-login btn-icon" title="Selecionar Música">
+          <ion-icon name="musical-notes-outline"></ion-icon>
+        </button>
       </div>
     </div>
   </header>

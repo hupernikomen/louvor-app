@@ -90,8 +90,8 @@
     };
 
     window.abrirSelecaoMusica = function(slotIndex) {
-      const width = 800;
-      const height = 700;
+      const width = 820;
+      const height = 720;
       const left = (screen.width - width) / 2;
       const top = (screen.height - height) / 2;
 
@@ -101,6 +101,17 @@
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
     };
+
+    // Listener para receber música do popup
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'musicaSelecionada') {
+        const { slot, musica } = e.data;
+        if (musica && typeof slot === 'number') {
+          musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
+          renderizarMusicas();
+        }
+      }
+    });
 
     function renderizarEquipe() {
       const container = document.getElementById('equipeContainer');
@@ -136,7 +147,6 @@
       if (isNovaEscala) {
         musicasSelecionadas = [null];
       } else if (escalaId) {
-        // Carregar dados da escala existente
         let docRef = doc(db, "escalasPendentes", escalaId);
         let docSnap = await getDoc(docRef);
 
@@ -147,13 +157,12 @@
 
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
-          musicasSelecionadas = [...(escalaAtual.musicas || [null])];
+          musicasSelecionadas = Array.isArray(escalaAtual.musicas) ? [...escalaAtual.musicas] : [null];
         } else {
           musicasSelecionadas = [null];
         }
       }
 
-      // Preencher campos
       document.getElementById('data').value = escalaAtual?.data || '';
       document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
       document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
@@ -197,9 +206,7 @@
     };
 
     window.cancelarEdicao = function() {
-      if (confirm("Deseja cancelar as alterações?")) {
-        window.history.back();
-      }
+      if (confirm("Deseja cancelar as alterações?")) window.history.back();
     };
 
     window.excluirEscala = async function () {

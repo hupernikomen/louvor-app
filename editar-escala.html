@@ -72,7 +72,7 @@
         container.innerHTML += `
           <div class="musica-slot">
             <label><strong>${index + 1}ª Música</strong></label>
-            <div onclick="abrirSelecaoMusica(${index})" class="musica-campo">
+            <div onclick="abrirSelecaoMusica(event, ${index})" class="musica-campo">
               ${nome}
             </div>
           </div>`;
@@ -89,7 +89,8 @@
       renderizarMusicas();
     };
 
-    window.abrirSelecaoMusica = function(slotIndex) {
+    window.abrirSelecaoMusica = function(e, slotIndex) {
+      e.stopPropagation(); // Impede propagação do clique
       const width = 820;
       const height = 720;
       const left = (screen.width - width) / 2;

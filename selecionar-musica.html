@@ -11,7 +11,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      font-family: 'Segoe UI', sans-serif; 
       background: #f8f9fa; 
       color: #333; 
       min-height: 100vh;
@@ -52,18 +52,6 @@
       font-size: 0.8rem;
       margin-right: 6px;
     }
-    .btn-fechar {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 12px 30px;
-      background: #e74c3c;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
   </style>
 
   <script type="module">
@@ -95,7 +83,7 @@
         div.innerHTML = `
           <div class="musica-titulo">${musica.titulo}</div>
           <div class="musica-info">${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}</div>
-          ${musica.tags ? `<div class="tags">${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
+          ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
         `;
         div.onclick = () => selecionarMusica(musica);
         container.appendChild(div);
@@ -133,7 +121,7 @@
     <h2 style="margin: 20px 0 15px;">Selecionar Música</h2>
     <input type="text" id="busca" class="search-bar" placeholder="🔍 Buscar por título ou tag...">
     <div id="listaMusicas"></div>
-    <button onclick="window.close()" class="btn-fechar">Fechar</button>
+    <button onclick="window.close()" style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer;">Fechar</button>
   </div>
 </body>
 </html>

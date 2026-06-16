@@ -3,301 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editar Escala - Louvor</title>
+  <title>Selecionar Música</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
-  <script type="module">
-    import { db, auth } from './firebase-config.js';
-    import { doc, getDoc, updateDoc, collection, getDocs, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-    let escalaId = null;
-    let escalaAtual = null;
-    let todasMusicas = [];
-    let todosMembros = [];
-    let cultosFixos = [];
-    let isNovaEscala = false;
-    let musicasSelecionadas = [];
-
-    
-    
-    onAuthStateChanged(auth, (user) => {
-      console.log(auth,user, "user");
-      // if (!user || user.email !== "hupcontato@gmail.com") window.location.href = "login.html";
-    });
-
-    function getUrlParams() {
-      const params = new URLSearchParams(window.location.search);
-      escalaId = params.get('id');
-      isNovaEscala = params.get('nova') === 'true';
-    }
-
-    async function carregarDados() {
-      await Promise.all([carregarCultosFixos(), carregarTodasMusicas(), carregarTodosMembros()]);
-    }
-
-    async function carregarCultosFixos() {
-      const snapshot = await getDocs(collection(db, "cultosFixos"));
-      cultosFixos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    async function carregarTodasMusicas() {
-      const snapshot = await getDocs(collection(db, "musicas"));
-      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-    }
-
-    async function carregarTodosMembros() {
-      const snapshot = await getDocs(collection(db, "membrosEquipe"));
-      todosMembros = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    function preencherTipoCulto() {
-      const select = document.getElementById('tipoCulto');
-      select.innerHTML = '<option value="">Selecione o tipo de culto...</option>';
-      cultosFixos.forEach(c => select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
-      select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
-    }
-
-    function handleTipoCultoChange() {
-      const valor = document.getElementById('tipoCulto').value;
-      document.getElementById('personalizarTipoContainer').style.display = valor === "personalizar" ? 'block' : 'none';
-    }
-
-    function renderizarMusicas() {
-      const container = document.getElementById('musicasContainer');
-      container.innerHTML = '';
-
-      musicasSelecionadas.forEach((musica, index) => {
-        const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Clique para selecionar uma música...';
-        container.innerHTML += `
-          <div class="musica-slot">
-            <label><strong>${index + 1}ª Música</strong></label>
-            <div onclick="abrirSelecaoMusica(event, ${index})" class="musica-campo">
-              ${nome}
-            </div>
-          </div>`;
-      });
-
-      container.innerHTML += `
-        <button onclick="adicionarNovaMusica()" class="btn-adicionar">
-          <ion-icon name="add-circle-outline"></ion-icon> Adicionar outra música
-        </button>`;
-    }
-
-    window.adicionarNovaMusica = function() {
-      musicasSelecionadas.push(null);
-      renderizarMusicas();
-    };
-
-    window.abrirSelecaoMusica = function(e, slotIndex) {
-      e.stopPropagation(); // Impede propagação do clique
-      const width = 820;
-      const height = 720;
-      const left = (screen.width - width) / 2;
-      const top = (screen.height - height) / 2;
-
-      window.open(
-        `selecionar-musica.html?slot=${slotIndex}`,
-        'SelecionarMusica',
-        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-      );
-    };
-
-    // Listener para receber música do popup
-    window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'musicaSelecionada') {
-        const { slot, musica } = e.data;
-        if (musica && typeof slot === 'number') {
-          musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
-          renderizarMusicas();
-        }
-      }
-    });
-
-    function renderizarEquipe() {
-      const container = document.getElementById('equipeContainer');
-      container.innerHTML = '<h3 style="margin: 20px 0 10px 0;">Equipe de Louvor</h3>';
-      if (todosMembros.length === 0) {
-        container.innerHTML += '<p style="color:#999;">Nenhum membro cadastrado.</p>';
-        return;
-      }
-      let html = '<div class="equipe-grid">';
-      todosMembros.forEach((membro, index) => {
-        const checked = escalaAtual?.equipe?.some(m => m.nome === membro.nome) ? 'checked' : '';
-        html += `
-          <div class="membro-item">
-            <div>
-              <div class="membro-nome">${membro.nome}</div>
-              <div class="membro-funcao">${membro.funcao}</div>
-            </div>
-            <label class="switch-container">
-              <input type="checkbox" class="switch-input" data-index="${index}" ${checked}>
-              <span class="switch-toggle"></span>
-            </label>
-          </div>`;
-      });
-      html += '</div>';
-      container.innerHTML += html;
-    }
-
-    async function carregarEscala() {
-      getUrlParams();
-      await carregarDados();
-      preencherTipoCulto();
-
-      if (isNovaEscala) {
-        musicasSelecionadas = [null];
-      } else if (escalaId) {
-        let docRef = doc(db, "escalasPendentes", escalaId);
-        let docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
-          docRef = doc(db, "escalasCulto", escalaId);
-          docSnap = await getDoc(docRef);
-        }
-
-        if (docSnap.exists()) {
-          escalaAtual = docSnap.data();
-          musicasSelecionadas = Array.isArray(escalaAtual.musicas) ? [...escalaAtual.musicas] : [null];
-        } else {
-          musicasSelecionadas = [null];
-        }
-      }
-
-      document.getElementById('data').value = escalaAtual?.data || '';
-      document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
-      document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
-
-      renderizarMusicas();
-      renderizarEquipe();
-    }
-
-    window.salvarAlteracoes = async () => {
-      let tipoCultoFinal = document.getElementById('tipoCulto').value;
-      if (tipoCultoFinal === "personalizar") tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
-
-      const equipeSalvar = todosMembros
-        .filter((_, i) => document.querySelector(`.switch-input[data-index="${i}"]`)?.checked)
-        .map(m => ({ nome: m.nome, funcao: m.funcao }));
-
-      const dados = {
-        data: document.getElementById('data').value,
-        tipoCulto: tipoCultoFinal,
-        numMusicas: musicasSelecionadas.filter(Boolean).length,
-        musicas: musicasSelecionadas.filter(Boolean),
-        equipe: equipeSalvar,
-        observacoes: document.getElementById('observacoes').value.trim(),
-        status: "aprovada",
-        criadoEm: escalaAtual?.criadoEm || new Date().toISOString()
-      };
-
-      try {
-        if (isNovaEscala) {
-          await addDoc(collection(db, "escalasPendentes"), dados);
-        } else if (escalaId) {
-          let docRef = doc(db, "escalasPendentes", escalaId);
-          if (!(await getDoc(docRef)).exists()) docRef = doc(db, "escalasCulto", escalaId);
-          await updateDoc(docRef, dados);
-        }
-        alert("✅ Escala salva com sucesso!");
-        window.location.href = "index.html";
-      } catch (e) {
-        alert("Erro: " + e.message);
-      }
-    };
-
-    window.cancelarEdicao = function() {
-      if (confirm("Deseja cancelar as alterações?")) window.history.back();
-    };
-
-    window.excluirEscala = async function () {
-      if (!confirm("Excluir esta escala?")) return;
-      await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
-      await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-      alert("Escala excluída!");
-      window.history.back();
-    };
-
-    window.onload = carregarEscala;
-  </script>
-
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; }
+    body { 
+      font-family: 'Segoe UI', sans-serif; 
+      background: #f8f9fa; 
+      color: #333; 
+      min-height: 100vh;
+    }
     .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
-    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; }
-    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; }
-    input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
 
-    .musica-slot { margin-bottom: 1.6rem; }
-    .musica-campo {
-      padding: 14px 16px;
-      background: #f8f9fa;
-      border: 2px solid #e9ecef;
-      border-radius: 10px;
-      min-height: 52px;
-      display: flex;
-      align-items: center;
+    .search-bar {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid #3498db;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .musica-item {
+      background: white;
+      padding: 16px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       cursor: pointer;
       transition: all 0.2s;
     }
-    .musica-campo:hover {
-      border-color: #3498db;
-      background: #f1f8ff;
+    .musica-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      border: 2px solid #3498db;
     }
-
-    .btn-adicionar {
-      padding: 12px 20px;
-      background: #27ae60;
+    .musica-titulo { font-size: 1.1rem; font-weight: 600; color: #2c3e50; }
+    .musica-info { font-size: 0.95rem; color: #555; margin-top: 6px; }
+    .tag {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin-right: 6px;
+    }
+    .btn-fechar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 30px;
+      background: #e74c3c;
       color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
+    }
+  </style>
+
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    let todasMusicas = [];
+    let slotIndex = 0;
+
+    async function carregarMusicas() {
+      const snapshot = await getDocs(collection(db, "musicas"));
+      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+      renderizarMusicas(todasMusicas);
     }
 
-    button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; margin-top: 1rem; cursor: pointer; }
-    .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
-    .btn-cancelar { background: #a0aec0; color: white; }
-    .btn-excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
-  </style>
+    function renderizarMusicas(musicas) {
+      const container = document.getElementById('listaMusicas');
+      container.innerHTML = '';
+
+      if (musicas.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:60px; color:#777;">Nenhuma música encontrada.</p>';
+        return;
+      }
+
+      musicas.forEach(musica => {
+        const div = document.createElement('div');
+        div.className = 'musica-item';
+        div.innerHTML = `
+          <div class="musica-titulo">${musica.titulo}</div>
+          <div class="musica-info">${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}</div>
+          ${musica.tags ? `<div class="tags">${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
+        `;
+        div.onclick = () => selecionarMusica(musica);
+        container.appendChild(div);
+      });
+    }
+
+    function selecionarMusica(musica) {
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'musicaSelecionada',
+          slot: slotIndex,
+          musica: musica
+        }, '*');
+      }
+      window.close();
+    }
+
+    document.getElementById('busca').addEventListener('input', (e) => {
+      const termo = e.target.value.toLowerCase().trim();
+      const filtradas = termo ? todasMusicas.filter(m => 
+        m.titulo.toLowerCase().includes(termo) || (m.tags && m.tags.toLowerCase().includes(termo))
+      ) : todasMusicas;
+      renderizarMusicas(filtradas);
+    });
+
+    window.onload = async () => {
+      const params = new URLSearchParams(window.location.search);
+      slotIndex = parseInt(params.get('slot')) || 0;
+      await carregarMusicas();
+    };
+  </script>
 </head>
 <body>
   <div class="container">
-    <div id="header-placeholder"></div>
-
-    <div class="card">
-      <label>Data do Culto</label>
-      <input type="date" id="data">
-
-      <label>Tipo de Culto</label>
-      <select id="tipoCulto" onchange="handleTipoCultoChange()"></select>
-      <div id="personalizarTipoContainer" class="personalizar-container">
-        <input type="text" id="tipoCultoPersonalizado" placeholder="Digite o nome do culto">
-      </div>
-
-      <div id="equipeContainer"></div>
-
-      <label>Músicas</label>
-      <div id="musicasContainer"></div>
-
-      <label>Observações</label>
-      <textarea id="observacoes" placeholder="Observações opcionais..."></textarea>
-
-      <button class="btn-salvar" onclick="salvarAlteracoes()">Salvar Alterações</button>
-      <button class="btn-cancelar" onclick="cancelarEdicao()">Cancelar</button>
-      <button id="btn-excluir" class="btn-excluir" onclick="excluirEscala()" style="display:none;">🗑️ Excluir Escala</button>
-    </div>
+    <h2 style="margin: 20px 0 15px;">Selecionar Música</h2>
+    <input type="text" id="busca" class="search-bar" placeholder="🔍 Buscar por título ou tag...">
+    <div id="listaMusicas"></div>
+    <button onclick="window.close()" class="btn-fechar">Fechar</button>
   </div>
-
-  <script src="header.js"></script>
-  <script>carregarHeader('Editar Escala');</script>
 </body>
 </html>

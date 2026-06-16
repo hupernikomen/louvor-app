@@ -10,7 +10,11 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; min-height: 100vh; }
+    body { 
+      font-family: 'Segoe UI', sans-serif; 
+      background: #f8f9fa; 
+      min-height: 100vh; 
+    }
     .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
 
     .search-bar {
@@ -69,10 +73,14 @@
     let slotIndex = 0;
 
     async function carregarMusicas() {
-      const snapshot = await getDocs(collection(db, "musicas"));
-      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-      renderizarMusicas(todasMusicas);
+      try {
+        const snapshot = await getDocs(collection(db, "musicas"));
+        todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+        renderizarMusicas(todasMusicas);
+      } catch (e) {
+        console.error("Erro ao carregar músicas:", e);
+      }
     }
 
     function renderizarMusicas(musicas) {
@@ -80,7 +88,7 @@
       container.innerHTML = '';
 
       if (musicas.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">Nenhuma música encontrada.</p>';
+        container.innerHTML = '<p style="text-align:center; padding:60px; color:#777;">Nenhuma música encontrada.</p>';
         return;
       }
 
@@ -98,7 +106,7 @@
     }
 
     function selecionarMusica(musica) {
-      if (window.opener) {
+      if (window.opener && !window.opener.closed) {
         window.opener.postMessage({
           type: 'musicaSelecionada',
           slot: slotIndex,

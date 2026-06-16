@@ -11,7 +11,6 @@
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { doc, getDoc, updateDoc, collection, getDocs, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
     let escalaId = null;
     let escalaAtual = null;
@@ -21,10 +20,8 @@
     let isNovaEscala = false;
     let musicasSelecionadas = [];
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user || user.email !== "hupcontato@gmail.com") window.location.href = "login.html";
-    });
-
+    
+  
     function getUrlParams() {
       const params = new URLSearchParams(window.location.search);
       escalaId = params.get('id');
@@ -90,7 +87,7 @@
     };
 
     window.abrirSelecaoMusica = function(e, slotIndex) {
-      e.stopPropagation();
+      e.stopPropagation(); // Impede propagação do clique
       const width = 820;
       const height = 720;
       const left = (screen.width - width) / 2;
@@ -103,6 +100,7 @@
       );
     };
 
+    // Listener para receber música do popup
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'musicaSelecionada') {
         const { slot, musica } = e.data;
@@ -186,7 +184,7 @@
         musicas: musicasSelecionadas.filter(Boolean),
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
-        status: "pendente",
+        status: "aprovada",
         criadoEm: escalaAtual?.criadoEm || new Date().toISOString()
       };
 
@@ -210,10 +208,10 @@
     };
 
     window.excluirEscala = async function () {
-      if (!confirm("⚠️ Tem certeza que deseja excluir esta escala permanentemente?")) return;
+      if (!confirm("Excluir esta escala?")) return;
       await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
       await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-      alert("🗑️ Escala excluída com sucesso!");
+      alert("Escala excluída!");
       window.history.back();
     };
 

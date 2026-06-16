@@ -10,12 +10,7 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f8f9fa;
-      color: #333;
-      min-height: 100vh;
-    }
+    body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; min-height: 100vh; }
     .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
 
     .search-bar {
@@ -41,19 +36,8 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.15);
       border: 2px solid #3498db;
     }
-    .musica-titulo {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    .musica-info {
-      font-size: 0.95rem;
-      color: #555;
-      margin-top: 6px;
-    }
-    .tags {
-      margin-top: 8px;
-    }
+    .musica-titulo { font-size: 1.1rem; font-weight: 600; color: #2c3e50; }
+    .musica-info { font-size: 0.95rem; color: #555; margin-top: 6px; }
     .tag {
       display: inline-block;
       background: #e3f2fd;
@@ -74,7 +58,6 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      font-size: 1rem;
     }
   </style>
 
@@ -96,24 +79,13 @@
       const container = document.getElementById('listaMusicas');
       container.innerHTML = '';
 
-      if (musicas.length === 0) {
-        container.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">Nenhuma música encontrada.</p>';
-        return;
-      }
-
       musicas.forEach(musica => {
         const div = document.createElement('div');
         div.className = 'musica-item';
         div.innerHTML = `
           <div class="musica-titulo">${musica.titulo}</div>
-          <div class="musica-info">
-            ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
-          </div>
-          ${musica.tags ? `
-            <div class="tags">
-              ${musica.tags.split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
-            </div>
-          ` : ''}
+          <div class="musica-info">${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}</div>
+          ${musica.tags ? `<div class="tags">${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
         `;
         div.onclick = () => selecionarMusica(musica);
         container.appendChild(div);
@@ -131,25 +103,17 @@
       window.close();
     }
 
-    // Filtro de busca
     document.getElementById('busca').addEventListener('input', (e) => {
       const termo = e.target.value.toLowerCase().trim();
-      if (!termo) {
-        renderizarMusicas(todasMusicas);
-        return;
-      }
-      const filtradas = todasMusicas.filter(m => 
-        m.titulo.toLowerCase().includes(termo) ||
-        (m.tags && m.tags.toLowerCase().includes(termo))
-      );
+      const filtradas = termo ? todasMusicas.filter(m => 
+        m.titulo.toLowerCase().includes(termo) || (m.tags && m.tags.toLowerCase().includes(termo))
+      ) : todasMusicas;
       renderizarMusicas(filtradas);
     });
 
     window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
       slotIndex = parseInt(params.get('slot')) || 0;
-
-      // Não faz verificação de login no popup
       await carregarMusicas();
     };
   </script>
@@ -157,15 +121,10 @@
 <body>
   <div class="container">
     <div id="header-placeholder"></div>
-
     <h2 style="margin: 20px 0 15px;">Selecionar Música</h2>
     <input type="text" id="busca" class="search-bar" placeholder="🔍 Buscar por título ou tag...">
-
     <div id="listaMusicas"></div>
-
-    <button onclick="window.close()" class="btn-fechar">
-      Fechar
-    </button>
+    <button onclick="window.close()" class="btn-fechar">Fechar</button>
   </div>
 
   <script src="header.js"></script>

@@ -79,6 +79,11 @@
       const container = document.getElementById('listaMusicas');
       container.innerHTML = '';
 
+      if (musicas.length === 0) {
+        container.innerHTML = '<p style="text-align:center; padding:40px; color:#777;">Nenhuma música encontrada.</p>';
+        return;
+      }
+
       musicas.forEach(musica => {
         const div = document.createElement('div');
         div.className = 'musica-item';

@@ -95,23 +95,11 @@
       const left = (screen.width - width) / 2;
       const top = (screen.height - height) / 2;
 
-      const popup = window.open(
+      window.open(
         `selecionar-musica.html?slot=${slotIndex}`,
         'SelecionarMusica',
         `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
       );
-
-      // Comunicação de volta do popup
-      window.addEventListener('message', function handler(e) {
-        if (e.data && e.data.type === 'musicaSelecionada') {
-          const { slot, musica } = e.data;
-          if (musica) {
-            musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
-            renderizarMusicas();
-          }
-          window.removeEventListener('message', handler);
-        }
-      });
     };
 
     function renderizarEquipe() {
@@ -145,21 +133,27 @@
       await carregarDados();
       preencherTipoCulto();
 
-      if (isNovaEscala || musicasSelecionadas.length === 0) {
+      if (isNovaEscala) {
         musicasSelecionadas = [null];
       } else if (escalaId) {
+        // Carregar dados da escala existente
         let docRef = doc(db, "escalasPendentes", escalaId);
         let docSnap = await getDoc(docRef);
+
         if (!docSnap.exists()) {
           docRef = doc(db, "escalasCulto", escalaId);
           docSnap = await getDoc(docRef);
         }
+
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
           musicasSelecionadas = [...(escalaAtual.musicas || [null])];
+        } else {
+          musicasSelecionadas = [null];
         }
       }
 
+      // Preencher campos
       document.getElementById('data').value = escalaAtual?.data || '';
       document.getElementById('tipoCulto').value = escalaAtual?.tipoCulto || '';
       document.getElementById('observacoes').value = escalaAtual?.observacoes || '';
@@ -184,7 +178,7 @@
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
         status: "pendente",
-        criadoEm: new Date().toISOString()
+        criadoEm: escalaAtual?.criadoEm || new Date().toISOString()
       };
 
       try {

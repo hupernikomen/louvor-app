@@ -35,7 +35,6 @@
       }
     }
 
-    // ==================== ORDENAÇÃO ====================
     function ordenarEscalas(escalas) {
       const ordemCultos = {
         "EBD": 1,
@@ -205,23 +204,6 @@
       border-radius: 16px;
       text-decoration: none;
       font-size: 0.9rem;
-      border: none;
-      cursor: pointer;
-    }
-
-    .btn-icon {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      border-radius: 12px;
-      transition: all 0.2s;
-    }
-
-    .btn-icon:hover {
-      background: rgba(52, 152, 219, 0.1);
     }
   </style>
 </head>
@@ -231,12 +213,12 @@
     <h1 style="font-size: 1.2rem; margin: 0;font-weight: 500;"></h1>
     <div>
       <a href="login.html" class="btn-login" id="btnLogin">Login</a>
-      <div id="menuLogado" style="display:none; gap:8px;">
-        <a href="menu.html" class="btn-login btn-icon" title="Menu Principal">
-          <ion-icon name="grid-outline"></ion-icon>
+      <div id="menuLogado" style="display:none; gap:10px;">
+        <a href="menu.html" class="btn-login" title="Menu Principal">
+          <ion-icon name="grid-outline" style="font-size: 1.4rem;"></ion-icon>
         </a>
-        <button onclick="abrirSelecionarMusica()" class="btn-login btn-icon" title="Selecionar Música">
-          <ion-icon name="musical-notes-outline"></ion-icon>
+        <button onclick="abrirSelecionarMusica()" class="btn-login" title="Selecionar Música">
+          <ion-icon name="musical-notes-outline" style="font-size: 1.4rem;"></ion-icon>
         </button>
       </div>
     </div>

@@ -31,25 +31,43 @@
       isNovaEscala = params.get('nova') === 'true';
     }
 
+    // ==================== ESTADO TEMPORÁRIO ====================
     function salvarEstadoTemporario() {
+      const equipeSelecionada = Array.from(document.querySelectorAll('.switch-input:checked'))
+                                    .map(cb => parseInt(cb.dataset.index));
+
       sessionStorage.setItem('escalaEmEdicao', JSON.stringify({
         data: document.getElementById('data').value,
         tipoCulto: document.getElementById('tipoCulto').value,
         tipoCultoPersonalizado: document.getElementById('tipoCultoPersonalizado').value,
         observacoes: document.getElementById('observacoes').value,
-        musicasSelecionadas: musicasSelecionadas
+        musicasSelecionadas: musicasSelecionadas,
+        equipeSelecionada: equipeSelecionada
       }));
     }
 
     function carregarEstadoTemporario() {
       const salvo = sessionStorage.getItem('escalaEmEdicao');
       if (!salvo) return false;
+
       const estado = JSON.parse(salvo);
+      
       document.getElementById('data').value = estado.data || '';
       document.getElementById('tipoCulto').value = estado.tipoCulto || '';
       document.getElementById('tipoCultoPersonalizado').value = estado.tipoCultoPersonalizado || '';
       document.getElementById('observacoes').value = estado.observacoes || '';
+
       if (estado.musicasSelecionadas) musicasSelecionadas = estado.musicasSelecionadas;
+
+      // Restaurar equipe
+      if (estado.equipeSelecionada) {
+        setTimeout(() => {
+          estado.equipeSelecionada.forEach(index => {
+            const checkbox = document.querySelector(`.switch-input[data-index="${index}"]`);
+            if (checkbox) checkbox.checked = true;
+          });
+        }, 300);
+      }
       return true;
     }
 

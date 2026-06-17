@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editar Escala - Louvor</title>
+  <title>Criar Escala - Louvor</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
@@ -20,8 +20,6 @@
     let isNovaEscala = false;
     let musicasSelecionadas = [];
 
-    
-  
     function getUrlParams() {
       const params = new URLSearchParams(window.location.search);
       escalaId = params.get('id');
@@ -87,7 +85,7 @@
     };
 
     window.abrirSelecaoMusica = function(e, slotIndex) {
-      e.stopPropagation(); // Impede propagação do clique
+      e.stopPropagation();
       const width = 820;
       const height = 720;
       const left = (screen.width - width) / 2;
@@ -100,7 +98,6 @@
       );
     };
 
-    // Listener para receber música do popup
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'musicaSelecionada') {
         const { slot, musica } = e.data;
@@ -113,23 +110,25 @@
 
     function renderizarEquipe() {
       const container = document.getElementById('equipeContainer');
-      container.innerHTML = '<h3 style="margin: 20px 0 10px 0;">Equipe de Louvor</h3>';
+      container.innerHTML = '<h3 style="margin: 20px 0 15px 0;">Equipe de Louvor</h3>';
+      
       if (todosMembros.length === 0) {
         container.innerHTML += '<p style="color:#999;">Nenhum membro cadastrado.</p>';
         return;
       }
-      let html = '<div class="equipe-grid">';
+
+      let html = '<div class="equipe-list">';
       todosMembros.forEach((membro, index) => {
         const checked = escalaAtual?.equipe?.some(m => m.nome === membro.nome) ? 'checked' : '';
         html += `
-          <div class="membro-item">
-            <div>
+          <div class="membro-row">
+            <div class="membro-info">
               <div class="membro-nome">${membro.nome}</div>
               <div class="membro-funcao">${membro.funcao}</div>
             </div>
-            <label class="switch-container">
+            <label class="switch">
               <input type="checkbox" class="switch-input" data-index="${index}" ${checked}>
-              <span class="switch-toggle"></span>
+              <span class="slider"></span>
             </label>
           </div>`;
       });
@@ -144,18 +143,15 @@
 
       if (isNovaEscala) {
         musicasSelecionadas = [null];
+        document.getElementById('btn-excluir').style.display = 'none';
       } else if (escalaId) {
-        let docRef = doc(db, "escalasPendentes", escalaId);
-        let docSnap = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
-          docRef = doc(db, "escalasCulto", escalaId);
-          docSnap = await getDoc(docRef);
-        }
+        const docRef = doc(db, "escalasCulto", escalaId);
+        const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           escalaAtual = docSnap.data();
           musicasSelecionadas = Array.isArray(escalaAtual.musicas) ? [...escalaAtual.musicas] : [null];
+          document.getElementById('btn-excluir').style.display = 'block';
         } else {
           musicasSelecionadas = [null];
         }
@@ -185,18 +181,17 @@
         equipe: equipeSalvar,
         observacoes: document.getElementById('observacoes').value.trim(),
         status: "aprovada",
-        criadoEm: escalaAtual?.criadoEm || new Date().toISOString()
+        criadoEm: escalaAtual?.criadoEm || new Date().toISOString(),
+        aprovadaEm: new Date().toISOString()
       };
 
       try {
-        if (isNovaEscala) {
-          await addDoc(collection(db, "escalasPendentes"), dados);
+        if (isNovaEscala || !escalaId) {
+          await addDoc(collection(db, "escalasCulto"), dados);
         } else if (escalaId) {
-          let docRef = doc(db, "escalasPendentes", escalaId);
-          if (!(await getDoc(docRef)).exists()) docRef = doc(db, "escalasCulto", escalaId);
-          await updateDoc(docRef, dados);
+          await updateDoc(doc(db, "escalasCulto", escalaId), dados);
         }
-        alert("✅ Escala salva com sucesso!");
+        alert("✅ Escala salva e publicada com sucesso!");
         window.location.href = "index.html";
       } catch (e) {
         alert("Erro: " + e.message);
@@ -208,10 +203,9 @@
     };
 
     window.excluirEscala = async function () {
-      if (!confirm("Excluir esta escala?")) return;
-      await deleteDoc(doc(db, "escalasPendentes", escalaId)).catch(() => {});
+      if (!confirm("Excluir esta escala permanentemente?")) return;
       await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
-      alert("Escala excluída!");
+      alert("✅ Escala excluída com sucesso!");
       window.history.back();
     };
 
@@ -260,7 +254,61 @@
     button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; margin-top: 1rem; cursor: pointer; }
     .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
     .btn-cancelar { background: #a0aec0; color: white; }
-    .btn-excluir { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    .btn-excluir { 
+      background: linear-gradient(135deg, #e74c3c, #c0392b); 
+      color: white; 
+      margin-top: 10px;
+    }
+
+    .equipe-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .membro-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .membro-info { flex: 1; }
+    .membro-nome { font-weight: 600; color: #2c3e50; }
+    .membro-funcao { font-size: 0.9rem; color: #64748b; }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: .4s;
+      border-radius: 28px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #27ae60; }
+    input:checked + .slider:before { transform: translateX(24px); }
   </style>
 </head>
 <body>
@@ -273,7 +321,7 @@
 
       <label>Tipo de Culto</label>
       <select id="tipoCulto" onchange="handleTipoCultoChange()"></select>
-      <div id="personalizarTipoContainer" class="personalizar-container">
+      <div id="personalizarTipoContainer" style="display:none; margin-top: 10px;">
         <input type="text" id="tipoCultoPersonalizado" placeholder="Digite o nome do culto">
       </div>
 
@@ -285,13 +333,15 @@
       <label>Observações</label>
       <textarea id="observacoes" placeholder="Observações opcionais..."></textarea>
 
-      <button class="btn-salvar" onclick="salvarAlteracoes()">Salvar Alterações</button>
+      <button class="btn-salvar" onclick="salvarAlteracoes()">Salvar e Publicar Escala</button>
       <button class="btn-cancelar" onclick="cancelarEdicao()">Cancelar</button>
-      <button id="btn-excluir" class="btn-excluir" onclick="excluirEscala()" style="display:none;">🗑️ Excluir Escala</button>
+      <button id="btn-excluir" class="btn-excluir" onclick="excluirEscala()" style="display: none;">
+        🗑️ Excluir Escala
+      </button>
     </div>
   </div>
 
   <script src="header.js"></script>
-  <script>carregarHeader('Editar Escala');</script>
+  <script>carregarHeader('Criar Escala');</script>
 </body>
 </html>

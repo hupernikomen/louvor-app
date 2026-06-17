@@ -6,7 +6,7 @@
   <title>Menu - Escala de Louvor</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,16 +25,6 @@
       box-shadow: 0 8px 25px rgba(0,0,0,0.1);
       padding: 1.5rem;
       text-align: center;
-    }
-    h1 {
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-    p.subtitle {
-      color: #2c3e50;
-      margin-bottom: 2.5rem;
-      font-size: 1.1rem;
     }
     .menu-grid {
       display: grid;
@@ -79,7 +69,6 @@
     <div id="header-placeholder"></div>
 
     <div class="card">
-
       <div class="menu-grid">
         <a href="cadastro-musicas.html" class="menu-button">
           <ion-icon name="musical-notes-outline"></ion-icon>
@@ -93,20 +82,17 @@
           <ion-icon name="calendar-outline"></ion-icon>
           Cultos Fixos
         </a>
-        <a href="escalas-pendentes.html" class="menu-button">
-          <ion-icon name="list-outline"></ion-icon>
-          Escalas Pendentes
+        <a href="editar-escala.html" class="menu-button">
+          <ion-icon name="calendar-outline"></ion-icon>
+          Criar Escala
         </a>
-        <!-- <a href="index.html" class="menu-button">
-          <ion-icon name="home-outline"></ion-icon>
-          Ver Escalas Publicadas
-        </a> -->
+        <!-- Escalas Pendentes removida -->
       </div>
     </div>
 
     <div class="footer-info">
       <p>Projeto: louvorapp • Conectado ao Firebase</p>
-      <p>Versão atualizada com nova inteligência de histórico</p>
+      <p>Todas as escalas são criadas manualmente</p>
     </div>
   </div>
 

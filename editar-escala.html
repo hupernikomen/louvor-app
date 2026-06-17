@@ -63,7 +63,7 @@
       container.innerHTML = '';
 
       musicasSelecionadas.forEach((musica, index) => {
-        const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Clique para selecionar uma música...';
+        const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Selecionar uma louvor...';
         container.innerHTML += `
           <div class="musica-slot">
             <label><strong>${index + 1}ª Música</strong></label>
@@ -75,7 +75,7 @@
 
       container.innerHTML += `
         <button onclick="adicionarNovaMusica()" class="btn-adicionar">
-          <ion-icon name="add-circle-outline"></ion-icon> Adicionar outra música
+          <ion-icon name="add-circle-outline"></ion-icon>Incluir louvor
         </button>`;
     }
 
@@ -217,7 +217,7 @@
     body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; }
     .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
     .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; }
-    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 600; }
+    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 500; }
     input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
 
     .musica-slot { margin-bottom: 1.6rem; }

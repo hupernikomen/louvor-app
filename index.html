@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -35,6 +36,44 @@
       }
     }
 
+    // ==================== MÚSICAS EM ENSAIO ====================
+    let musicasEmEnsaio = [];
+
+    async function carregarMusicasEmEnsaio() {
+      try {
+        const snapshot = await getDocs(collection(db, "musicas"));
+        musicasEmEnsaio = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(m => m.fase === 'ensaio')
+          .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+
+        renderizarMusicasEmEnsaio();
+      } catch (e) {
+        console.error("Erro ao carregar músicas em ensaio:", e);
+      }
+    }
+
+    function renderizarMusicasEmEnsaio() {
+      const container = document.getElementById('musicasEnsaioContainer');
+      if (musicasEmEnsaio.length === 0) {
+        container.innerHTML = `<p style="color:#888; text-align:center; padding:12px 0;">Nenhuma música em ensaio no momento.</p>`;
+        return;
+      }
+
+      let html = '';
+      musicasEmEnsaio.forEach(m => {
+        html += `
+          <div class="musica-ensaio-item" >
+            ${m.titulo} ${m.tom ? `(${m.tom})` : ''}
+          </div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    window.abrirEdicaoMusica = function (id) {
+      window.open(`cadastro-musicas.html?id=${id}`, '_blank');
+    };
+
     // ==================== ORDENAÇÃO ====================
     function ordenarEscalas(escalas) {
       const ordemCultos = {
@@ -55,7 +94,7 @@
     async function carregarEscalas(mostrarAnteriores = false) {
       mostrandoAnteriores = mostrarAnteriores;
       const feed = document.getElementById('feed');
-      const btnAlternar = document.getElementById('btnAlternar');
+      // const btnAlternar = document.getElementById('btnAlternar');
       const titulo = document.getElementById('tituloFeed');
 
       feed.innerHTML = '<p class="loading">Carregando escalas...</p>';
@@ -83,12 +122,12 @@
             .filter(e => new Date(e.data + 'T12:00:00') < hoje)
             .slice(0, 30);
           titulo.textContent = "Últimas 30 Escalas Realizadas";
-          btnAlternar.innerHTML = `Voltar`;
+          // btnAlternar.innerHTML = `Voltar`;
         } else {
           escalasFiltradas = escalasTodas
             .filter(e => new Date(e.data + 'T12:00:00') >= hoje);
           titulo.textContent = "";
-          btnAlternar.innerHTML = `Anteriores`;
+          // btnAlternar.innerHTML = `Anteriores`;
         }
 
         escalasFiltradas = ordenarEscalas(escalasFiltradas);
@@ -114,12 +153,11 @@
       }
     }
 
-    window.alternarEscalas = function() {
+    window.alternarEscalas = function () {
       carregarEscalas(!mostrandoAnteriores);
     };
 
-    // Função para abrir selecionar música
-    window.abrirSelecionarMusica = function() {
+    window.abrirSelecionarMusica = function () {
       const width = 820;
       const height = 720;
       const left = (screen.width - width) / 2;
@@ -133,8 +171,18 @@
     };
 
     window.onload = () => {
+      carregarMusicasEmEnsaio();
       carregarEscalas(false);
     };
+
+
+    window.recarregarPaginaInicial = function() {
+  mostrandoAnteriores = false;
+  document.getElementById('tituloFeed').textContent = "";
+  carregarEscalas(false);
+};
+
+
   </script>
 
   <style>
@@ -168,7 +216,6 @@
       padding: 1rem;
     }
 
-    /* Botão discreto, pequeno e centralizado */
     .btn-alternar {
       display: block;
       margin: 1px auto 25px auto;
@@ -189,7 +236,9 @@
       transform: translateY(-1px);
     }
 
-    .loading, .empty-state, .error {
+    .loading,
+    .empty-state,
+    .error {
       text-align: center;
       padding: 80px 20px;
       color: #777;
@@ -287,25 +336,116 @@
       color: #222;
       font-size: 0.90rem;
     }
+
+    /* Nova seção - Músicas em Ensaio */
+    .musicas-ensaio {
+      margin-bottom: 20px;
+    }
+
+    .musicas-ensaio h3 {
+      margin-bottom: 10px;
+      color: #e67e22;
+      font-size: 1.05rem;
+    }
+
+    .scroll-horizontal {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .musica-ensaio-item {
+      background: #fff;
+      border: 1px solid #e67e22;
+      padding: 10px 18px;
+      border-radius: 10px;
+      white-space: nowrap;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      padding: 12px 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      z-index: 100;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: #2c3e50;
+      padding: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: #f1f3f5;
+      color: #3498db;
+    }
+
+    .header-left,
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
   </style>
 </head>
 
 <body>
   <header class="header">
-    <h1 style="font-size: 1.2rem; margin: 0;font-weight: 500;"></h1>
-    <div>
-      <a href="login.html" class="btn-login" id="btnLogin">Login</a>
-      <div id="menuLogado" style="display:none; gap:10px;">
-        <a href="menu.html" class="btn-login">Menu</a>
-        <a onclick="abrirSelecionarMusica()" class="btn-login">Louvores</a>
+    <div class="header-left">
+      <button onclick="recarregarPaginaInicial()" class="icon-btn" title="Início">
+        <ion-icon name="home-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- <h1 style="font-size: 1.25rem; margin: 0; font-weight: 600; color: #2c3e50;">Louvor</h1> -->
+
+    <div class="header-right">
+      <!-- Não logado -->
+      <a href="login.html" id="btnLogin" class="icon-btn" title="Fazer Login">
+        <ion-icon name="log-in-outline"></ion-icon>
+      </a>
+
+      <!-- Logado -->
+      <div id="menuLogado" style="display: none; gap: 8px;">
+        <a href="menu.html" class="icon-btn" title="Menu Principal">
+          <ion-icon name="grid-outline"></ion-icon>
+        </a>
+        <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
+          <ion-icon name="musical-notes-outline"></ion-icon>
+        </button>
+        <button onclick="alternarEscalas()" class="icon-btn" title="Ver Anteriores">
+          <ion-icon name="time-outline"></ion-icon>
+        </button>
       </div>
     </div>
   </header>
 
   <div class="container">
-    <button onclick="alternarEscalas()" id="btnAlternar" class="btn-alternar">
+    <!-- <button onclick="alternarEscalas()" id="btnAlternar" class="btn-alternar">
       Anteriores
-    </button>
+    </button> -->
+
+    <!-- Nova seção adicionada -->
+    <div class="musicas-ensaio">
+      <h3 style="margin-left: 18px;">Músicas para Ensaio</h3>
+      <div id="musicasEnsaioContainer" class="scroll-horizontal"></div>
+    </div>
 
     <h2 id="tituloFeed" style="margin: 10px 0 20px 5px; color: #2c3e50; text-align: center;"></h2>
     

@@ -6,7 +6,7 @@
   <title>Cadastro de Músicas</title>
 
   <script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <style>
     * {
@@ -51,7 +51,7 @@
       gap: 1.25rem;
     }
 
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 14px 16px;
       border: 2px solid #e9ecef;
@@ -60,7 +60,7 @@
       background: #fafbfc;
     }
 
-    input:focus, textarea:focus {
+    input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: #3498db;
       box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
@@ -97,31 +97,45 @@
 
   <script type="module">
     import { db } from './firebase-config.js';
-    import { collection, addDoc, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { collection, addDoc, doc, updateDoc, deleteDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
     const musicasRef = collection(db, "musicas");
     let musicaEditandoId = null;
 
-    window.editarMusica = async function (id) {
+    // Função para carregar música por ID (via URL)
+    async function carregarMusicaParaEdicao(id) {
       try {
-        const snapshot = await getDocs(musicasRef);
-        const musicaDoc = snapshot.docs.find(d => d.id === id);
-        if (!musicaDoc) return;
+        const musicaDoc = await getDoc(doc(db, "musicas", id));
+        if (!musicaDoc.exists()) {
+          alert("Música não encontrada!");
+          return;
+        }
 
         const musica = musicaDoc.data();
+        musicaEditandoId = id;
 
         document.getElementById('titulo').value = musica.titulo || '';
         document.getElementById('tom').value = musica.tom || '';
         document.getElementById('tags').value = musica.tags || '';
         document.getElementById('observacoes').value = musica.observacoes || '';
+        document.getElementById('fase').value = musica.fase || 'pronta';
 
-        musicaEditandoId = id;
         document.querySelector('button[type="submit"]').innerHTML = 'Atualizar Música';
         document.getElementById('btn-excluir').style.display = 'block';
+        document.querySelector('h2').textContent = 'Editar Música';
       } catch (e) {
         alert("Erro ao carregar música: " + e.message);
       }
-    };
+    }
+
+    // Carregar música se vier ID na URL
+    function verificarEdicaoUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (id) {
+        carregarMusicaParaEdicao(id);
+      }
+    }
 
     document.getElementById('formMusica').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -131,6 +145,7 @@
         tom: document.getElementById('tom').value.trim().toUpperCase() || null,
         tags: document.getElementById('tags').value.trim(),
         observacoes: document.getElementById('observacoes').value.trim(),
+        fase: document.getElementById('fase').value,
         ultimaUso: null,
         vezesUsada: 0,
         criadoEm: new Date().toISOString().split('T')[0]
@@ -140,15 +155,16 @@
         if (musicaEditandoId) {
           await updateDoc(doc(db, "musicas", musicaEditandoId), musica);
           alert("✅ Música atualizada com sucesso!");
-          musicaEditandoId = null;
-          document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
-          document.getElementById('btn-excluir').style.display = 'none';
         } else {
           await addDoc(musicasRef, musica);
           alert("✅ Música cadastrada com sucesso!");
         }
 
         e.target.reset();
+        musicaEditandoId = null;
+        document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
+        document.getElementById('btn-excluir').style.display = 'none';
+        document.querySelector('h2').textContent = 'Nova Música';
       } catch (error) {
         alert("❌ Erro ao salvar: " + error.message);
       }
@@ -165,10 +181,16 @@
         musicaEditandoId = null;
         document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
         document.getElementById('btn-excluir').style.display = 'none';
+        document.querySelector('h2').textContent = 'Nova Música';
         document.getElementById('formMusica').reset();
       } catch (error) {
         alert("❌ Erro ao excluir: " + error.message);
       }
+    };
+
+    // Inicialização
+    window.onload = () => {
+      verificarEdicaoUrl();
     };
   </script>
 </head>
@@ -185,6 +207,12 @@
         <input type="text" id="tom" placeholder="Tom (Ex: D, C#, Bb)">
 
         <input type="text" id="tags" placeholder="Tags (separadas por vírgula) - Ex: preludio, ceia, animada">
+
+        <label><strong>Fase da Música</strong></label>
+        <select id="fase" required>
+          <option value="ensaio">Em Ensaio</option>
+          <option value="pronta" selected>Pronta para Culto</option>
+        </select>
 
         <textarea id="observacoes" placeholder="Dicas, arranjos, etc..."></textarea>
 

@@ -203,6 +203,7 @@
       display: flex; justify-content: space-between; align-items: center; 
       box-shadow: 0 1px 4px rgba(0,0,0,0.04); z-index: 100; background: #fff; 
     }
+    .header-left, .header-right { display: flex; align-items: center; gap: 12px; }  
 
     .container { max-width: 1000px; margin: 0 auto; }
 
@@ -248,13 +249,18 @@
 
     <div class="header-right">
       <div id="menuLogado" style="display: none; gap: 8px;">
+        
         <a href="menu.html" class="icon-btn" title="Menu Principal">
           <ion-icon name="options-outline"></ion-icon>
         </a>
-        <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
+       
+
+
+      </div>
+
+              <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
           <ion-icon name="musical-note-outline"></ion-icon>
         </button>
-      </div>
 
       <button onclick="alternarEscalas()" class="icon-btn" title="Ver Anteriores">
         <ion-icon name="time-outline"></ion-icon>

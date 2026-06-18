@@ -51,9 +51,9 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
     </div>` : '';
 
   const headerHTML = (onAprovar || onEditar) 
-    ? `<h3 style="font-weight: 500">${escala.tipoCulto || 'Culto'} - ${dataFormatada}</h3>`
+    ? `<h3>${escala.tipoCulto || 'Culto'} - ${dataFormatada}</h3>`
     : `
-      <span  style="font-weight: 500" class="tipo-culto" style="color: ${corBadge};">${escala.tipoCulto || 'Culto'}</span>
+      <span class="tipo-culto" style="color: ${corBadge};">${escala.tipoCulto || 'Culto'}</span>
       <span class="data">${dataFormatada}</span>
     `;
 

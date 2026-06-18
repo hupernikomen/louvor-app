@@ -97,12 +97,11 @@
 
   <script type="module">
     import { db } from './firebase-config.js';
-    import { collection, addDoc, doc, updateDoc, deleteDoc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { collection, addDoc, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
     const musicasRef = collection(db, "musicas");
     let musicaEditandoId = null;
 
-    // Função para carregar música por ID (via URL)
     async function carregarMusicaParaEdicao(id) {
       try {
         const musicaDoc = await getDoc(doc(db, "musicas", id));
@@ -115,6 +114,7 @@
         musicaEditandoId = id;
 
         document.getElementById('titulo').value = musica.titulo || '';
+        document.getElementById('versao').value = musica.versao || '';        // novo campo
         document.getElementById('tom').value = musica.tom || '';
         document.getElementById('tags').value = musica.tags || '';
         document.getElementById('observacoes').value = musica.observacoes || '';
@@ -128,7 +128,6 @@
       }
     }
 
-    // Carregar música se vier ID na URL
     function verificarEdicaoUrl() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -142,6 +141,7 @@
 
       const musica = {
         titulo: document.getElementById('titulo').value.trim(),
+        versao: document.getElementById('versao').value.trim(),               // novo campo
         tom: document.getElementById('tom').value.trim().toUpperCase() || null,
         tags: document.getElementById('tags').value.trim(),
         observacoes: document.getElementById('observacoes').value.trim(),
@@ -188,7 +188,6 @@
       }
     };
 
-    // Inicialização
     window.onload = () => {
       verificarEdicaoUrl();
     };
@@ -203,6 +202,9 @@
       <h2>Nova Música</h2>
       <form id="formMusica">
         <input type="text" id="titulo" required placeholder="Título da música">
+
+        <!-- Novo campo Versão -->
+        <input type="text" id="versao" placeholder="Versão (Ex: 2025, Ao Vivo, Simplificada...)">
 
         <input type="text" id="tom" placeholder="Tom (Ex: D, C#, Bb)">
 

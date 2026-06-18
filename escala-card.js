@@ -4,7 +4,7 @@
 
 function getTipoCultoColor(tipo) {
   const t = (tipo || "").toLowerCase().trim();
-  if (t.includes("louvor") || t.includes("pregação")) return "#793838ff";
+  if (t.includes("louvor") || t.includes("pregação")) return "#592a2aff";
   if (t.includes("oração") || t.includes("doutrina")) return "#1c5c72ff";
   if (t.includes("ebd") || t.includes("EBD")) return "#1f6522ff";
   if (t.includes("evento")) return "#643975ff";

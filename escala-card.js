@@ -4,7 +4,7 @@
 
 function getTipoCultoColor(tipo) {
   const t = (tipo || "").toLowerCase().trim();
-  if (t.includes("louvor") || t.includes("pregação")) return "#592a2aff";
+  if (t.includes("louvor") || t.includes("pregação")) return "#862424ff";
   if (t.includes("oração") || t.includes("doutrina")) return "#1c5c72ff";
   if (t.includes("ebd") || t.includes("EBD")) return "#1f6522ff";
   if (t.includes("evento")) return "#643975ff";
@@ -51,9 +51,9 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
     </div>` : '';
 
   const headerHTML = (onAprovar || onEditar) 
-    ? `<h3>${escala.tipoCulto || 'Culto'} - ${dataFormatada}</h3>`
+    ? `<h3 style="font-weight: 500">${escala.tipoCulto || 'Culto'} - ${dataFormatada}</h3>`
     : `
-      <span class="tipo-culto" style="color: ${corBadge};">${escala.tipoCulto || 'Culto'}</span>
+      <span  style="font-weight: 500" class="tipo-culto" style="color: ${corBadge};">${escala.tipoCulto || 'Culto'}</span>
       <span class="data">${dataFormatada}</span>
     `;
 

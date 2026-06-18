@@ -55,29 +55,35 @@
 
     function renderizarMusicasEmEnsaio() {
       const container = document.getElementById('musicasEnsaioContainer');
+      const titulo = document.getElementById('tituloEnsaio');
+
       if (musicasEmEnsaio.length === 0) {
+        titulo.innerHTML = `Louvores para Ensaios <span style="font-weight:400; color:#888;">(0)</span>`;
         container.innerHTML = `<p style="color:#888; text-align:center; padding:12px 0;">Nenhuma música em ensaio no momento.</p>`;
         return;
       }
 
+      // Atualiza o título com a quantidade
+      titulo.innerHTML = `Louvores para Ensaios <span style="font-weight:500; color:#e67e22;">(${musicasEmEnsaio.length})</span>`;
+
       let html = '';
       musicasEmEnsaio.forEach(m => {
         const versaoHTML = m.versao && m.versao.trim() !== ''
-          ? `<div class="versao-musica">${m.versao}</div>` 
+          ? `<div class="versao-musica">${m.versao}</div>`
           : '';
 
-        const clicavel = usuarioLogado 
-          ? `onclick="abrirEdicaoMusica('${m.id}')"` 
+        const clicavel = usuarioLogado
+          ? `onclick="abrirEdicaoMusica('${m.id}')"`
           : '';
 
         const cursorStyle = usuarioLogado ? 'cursor: pointer;' : 'cursor: default;';
 
         html += `
-          <div class="musica-ensaio-item" ${clicavel} style="${cursorStyle}">
-            <div class="musica-titulo">${m.titulo}</div>
-            ${versaoHTML}
-            ${m.tom ? `<div class="tom-musica">Tom: ${m.tom}</div>` : ''}
-          </div>`;
+      <div class="musica-ensaio-item" ${clicavel} style="${cursorStyle}">
+        <div class="musica-titulo">${m.titulo}</div>
+        ${versaoHTML}
+        ${m.tom ? `<div class="tom-musica">Tom: ${m.tom}</div>` : ''}
+      </div>`;
       });
       container.innerHTML = html;
     }
@@ -458,12 +464,12 @@
 
     <div class="header-right">
 
-       <!-- Logado -->
+      <!-- Logado -->
       <div id="menuLogado" style="display: none; gap: 8px;">
         <a href="menu.html" class="icon-btn" title="Menu Principal">
           <ion-icon name="options-outline"></ion-icon>
         </a>
-        
+
         <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
           <ion-icon name="musical-note-outline"></ion-icon>
         </button>
@@ -478,7 +484,7 @@
         <ion-icon name="lock-open-outline"></ion-icon>
       </a>
 
-     
+
     </div>
   </header>
 
@@ -487,9 +493,8 @@
       Anteriores
     </button> -->
 
-    <!-- Nova seção adicionada -->
     <div class="musicas-ensaio">
-      <h3>Louvores para Ensaios</h3>
+      <h3 id="tituloEnsaio">Louvores para Ensaios</h3>
       <div id="musicasEnsaioContainer" class="scroll-horizontal"></div>
     </div>
 

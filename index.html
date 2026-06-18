@@ -63,11 +63,17 @@
       let html = '';
       musicasEmEnsaio.forEach(m => {
         const versaoHTML = m.versao && m.versao.trim() !== ''
-          ? `<div class="versao-musica">${m.versao}</div>`
+          ? `<div class="versao-musica">${m.versao}</div>` 
           : '';
 
+        const clicavel = usuarioLogado 
+          ? `onclick="abrirEdicaoMusica('${m.id}')"` 
+          : '';
+
+        const cursorStyle = usuarioLogado ? 'cursor: pointer;' : 'cursor: default;';
+
         html += `
-          <div class="musica-ensaio-item" onclick="abrirEdicaoMusica('${m.id}')">
+          <div class="musica-ensaio-item" ${clicavel} style="${cursorStyle}">
             <div class="musica-titulo">${m.titulo}</div>
             ${versaoHTML}
             ${m.tom ? `<div class="tom-musica">Tom: ${m.tom}</div>` : ''}

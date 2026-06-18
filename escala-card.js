@@ -24,7 +24,7 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
   const dataFormatada = new Date(escala.data + 'T12:00:00').toLocaleDateString('pt-BR', {
     weekday: 'short',
     day: '2-digit',
-    month: 'short'
+    // month: 'short'
   });
 
   const corBadge = getTipoCultoColor(escala.tipoCulto || '');

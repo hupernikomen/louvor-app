@@ -53,44 +53,17 @@
       font-size: 0.8rem;
       margin-right: 6px;
     }
-
-    .musica-item.long-press {
-      background: #fff3e0;
-      transform: scale(0.98);
-    }
   </style>
 
   <script type="module">
-    import { db } from './firebase-config.js';
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-    // ==================== CACHE PARA REDUZIR LEITURAS ====================
-    let cacheMusicas = null;
-    let cacheTimestamp = 0;
-    const CACHE_DURATION = 180000; // 3 minutos em milissegundos
+    import { getMusicas } from './data-service.js';
 
     let todasMusicas = [];
     let slotIndex = 0;
-    let pressTimer = null;
 
     async function carregarMusicas() {
-      const agora = Date.now();
-
-      // Usa cache se ainda estiver válido
-      if (cacheMusicas && (agora - cacheTimestamp < CACHE_DURATION)) {
-        todasMusicas = cacheMusicas;
-        renderizarMusicas(todasMusicas);
-        return;
-      }
-
       try {
-        const snapshot = await getDocs(collection(db, "musicas"));
-        cacheMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        cacheMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-        
-        cacheTimestamp = agora;
-        todasMusicas = cacheMusicas;
-
+        todasMusicas = await getMusicas();
         renderizarMusicas(todasMusicas);
       } catch (e) {
         console.error("Erro ao carregar músicas:", e);
@@ -120,37 +93,9 @@
           ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
         `;
 
-        // Clique normal = Selecionar
         div.addEventListener('click', () => selecionarMusica(musica));
-
-        // Long Press = Editar
-        setupLongPress(div, () => editarMusica(musica.id));
-
         container.appendChild(div);
       });
-    }
-
-    function setupLongPress(element, callback) {
-      const longPressDuration = 650;
-
-      function startPress() {
-        pressTimer = setTimeout(() => {
-          element.classList.add('long-press');
-          callback();
-        }, longPressDuration);
-      }
-
-      function cancelPress() {
-        clearTimeout(pressTimer);
-        element.classList.remove('long-press');
-      }
-
-      element.addEventListener('mousedown', startPress);
-      element.addEventListener('mouseup', cancelPress);
-      element.addEventListener('mouseleave', cancelPress);
-      element.addEventListener('touchstart', startPress);
-      element.addEventListener('touchend', cancelPress);
-      element.addEventListener('touchcancel', cancelPress);
     }
 
     function selecionarMusica(musica) {
@@ -162,10 +107,6 @@
         }, '*');
       }
       window.close();
-    }
-
-    function editarMusica(id) {
-      window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     }
 
     // Filtro de busca
@@ -189,7 +130,6 @@
     window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
       slotIndex = parseInt(params.get('slot')) || 0;
-      
       await carregarMusicas();
     };
   </script>

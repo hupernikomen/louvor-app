@@ -10,16 +10,8 @@
 
   <script type="module">
     import { db, auth } from './firebase-config.js';
-    import { doc, getDoc, updateDoc, collection, getDocs, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-    // ==================== CACHE GLOBAL PARA REDUZIR LEITURAS ====================
-    let cacheGlobal = {
-      musicas: null,
-      membros: null,
-      cultos: null,
-      timestamp: 0
-    };
-    const CACHE_DURATION = 180000; // 3 minutos
+    import { doc, getDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { getMusicas, getMembros, getCultosFixos } from './data-service.js';
 
     let escalaId = null;
     let escalaAtual = null;
@@ -36,50 +28,16 @@
     }
 
     async function carregarDados() {
-      const agora = Date.now();
-
-      // Usa cache se ainda válido
-      if (cacheGlobal.musicas && (agora - cacheGlobal.timestamp < CACHE_DURATION)) {
-        todasMusicas = cacheGlobal.musicas;
-        todosMembros = cacheGlobal.membros;
-        cultosFixos = cacheGlobal.cultos;
-        preencherTipoCulto();
-        return;
-      }
-
       try {
-        await Promise.all([
-          carregarCultosFixos(),
-          carregarTodasMusicas(),
-          carregarTodosMembros()
+        [todasMusicas, todosMembros, cultosFixos] = await Promise.all([
+          getMusicas(),
+          getMembros(),
+          getCultosFixos()
         ]);
-
-        // Salva no cache
-        cacheGlobal = {
-          musicas: todasMusicas,
-          membros: todosMembros,
-          cultos: cultosFixos,
-          timestamp: agora
-        };
+        preencherTipoCulto();
       } catch (e) {
         console.error("Erro ao carregar dados:", e);
       }
-    }
-
-    async function carregarCultosFixos() {
-      const snapshot = await getDocs(collection(db, "cultosFixos"));
-      cultosFixos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    async function carregarTodasMusicas() {
-      const snapshot = await getDocs(collection(db, "musicas"));
-      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-    }
-
-    async function carregarTodosMembros() {
-      const snapshot = await getDocs(collection(db, "membrosEquipe"));
-      todosMembros = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
     function preencherTipoCulto() {

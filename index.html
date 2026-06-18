@@ -68,6 +68,8 @@
 
       let html = '';
       musicasEmEnsaio.forEach(m => {
+        console.log(m);
+        
         const versaoHTML = m.versao && m.versao.trim() !== ''
           ? `<div class="versao-musica">${m.versao}</div>`
           : '';
@@ -87,6 +89,7 @@
       });
       container.innerHTML = html;
     }
+    
     window.abrirEdicaoMusica = function (id) {
       window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     };
@@ -395,10 +398,17 @@
       transition: all 0.2s;
     }
 
-    .musica-titulo {
-      font-weight: 400;
-      color: #2c3e50;
-    }
+.versao-item {
+  font-size: 0.83rem;
+  color: #666;
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.musica-titulo {
+  font-weight: 400;
+  color: #2c3e50;
+}
 
     .versao-musica {
       font-size: 0.75rem;

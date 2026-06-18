@@ -1,5 +1,5 @@
 // ================================================
-// escala-card.js - Apenas lógica do card (CSS está nos HTMLs)
+// escala-card.js
 // ================================================
 
 function getTipoCultoColor(tipo) {
@@ -24,16 +24,25 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
   const dataFormatada = new Date(escala.data + 'T12:00:00').toLocaleDateString('pt-BR', {
     weekday: 'short',
     day: '2-digit',
-    // month: 'short'
   });
 
   const corBadge = getTipoCultoColor(escala.tipoCulto || '');
 
   const musicasHTML = (escala.musicas && escala.musicas.length)
-    ? escala.musicas.map(m => `
-        <div class="musica-item">
-          ${m.titulo} ${m.tom ? `<span class="tom">(${m.tom})</span>` : ''}
-        </div>`).join('')
+    ? escala.musicas.map(m => {
+      console.log(m);
+      
+        const tomHTML = m.tom ? ` <span class="tom">(${m.tom})</span>` : '';
+        
+        const versao = (m.versao || '').trim();
+        const versaoHTML = versao ? `<div class="versao-item">${m.versao}</div>` : '';
+
+        return `
+          <div class="musica-item">
+            <span class="musica-titulo">${m.titulo}${tomHTML}</span>
+            ${versaoHTML}
+          </div>`;
+      }).join('')
     : '<p style="color:#999; font-style:italic; padding:8px 0;">Nenhuma música definida</p>';
 
   const equipeHTML = (escala.equipe && escala.equipe.length)

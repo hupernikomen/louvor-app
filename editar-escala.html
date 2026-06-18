@@ -12,6 +12,15 @@
     import { db, auth } from './firebase-config.js';
     import { doc, getDoc, updateDoc, collection, getDocs, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+    // ==================== CACHE GLOBAL PARA REDUZIR LEITURAS ====================
+    let cacheGlobal = {
+      musicas: null,
+      membros: null,
+      cultos: null,
+      timestamp: 0
+    };
+    const CACHE_DURATION = 180000; // 3 minutos
+
     let escalaId = null;
     let escalaAtual = null;
     let todasMusicas = [];
@@ -27,7 +36,34 @@
     }
 
     async function carregarDados() {
-      await Promise.all([carregarCultosFixos(), carregarTodasMusicas(), carregarTodosMembros()]);
+      const agora = Date.now();
+
+      // Usa cache se ainda válido
+      if (cacheGlobal.musicas && (agora - cacheGlobal.timestamp < CACHE_DURATION)) {
+        todasMusicas = cacheGlobal.musicas;
+        todosMembros = cacheGlobal.membros;
+        cultosFixos = cacheGlobal.cultos;
+        preencherTipoCulto();
+        return;
+      }
+
+      try {
+        await Promise.all([
+          carregarCultosFixos(),
+          carregarTodasMusicas(),
+          carregarTodosMembros()
+        ]);
+
+        // Salva no cache
+        cacheGlobal = {
+          musicas: todasMusicas,
+          membros: todosMembros,
+          cultos: cultosFixos,
+          timestamp: agora
+        };
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+      }
     }
 
     async function carregarCultosFixos() {
@@ -49,7 +85,9 @@
     function preencherTipoCulto() {
       const select = document.getElementById('tipoCulto');
       select.innerHTML = '<option value="">Selecione o tipo de culto...</option>';
-      cultosFixos.forEach(c => select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
+      cultosFixos.forEach(c => {
+        select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+      });
       select.innerHTML += `<option value="personalizar">Personalizar...</option>`;
     }
 
@@ -167,7 +205,9 @@
 
     window.salvarAlteracoes = async () => {
       let tipoCultoFinal = document.getElementById('tipoCulto').value;
-      if (tipoCultoFinal === "personalizar") tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
+      if (tipoCultoFinal === "personalizar") {
+        tipoCultoFinal = document.getElementById('tipoCultoPersonalizado').value.trim();
+      }
 
       const equipeSalvar = todosMembros
         .filter((_, i) => document.querySelector(`.switch-input[data-index="${i}"]`)?.checked)

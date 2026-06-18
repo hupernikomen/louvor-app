@@ -64,15 +64,38 @@
     import { db } from './firebase-config.js';
     import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
+    // ==================== CACHE PARA REDUZIR LEITURAS ====================
+    let cacheMusicas = null;
+    let cacheTimestamp = 0;
+    const CACHE_DURATION = 180000; // 3 minutos em milissegundos
+
     let todasMusicas = [];
     let slotIndex = 0;
     let pressTimer = null;
 
     async function carregarMusicas() {
-      const snapshot = await getDocs(collection(db, "musicas"));
-      todasMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      todasMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
-      renderizarMusicas(todasMusicas);
+      const agora = Date.now();
+
+      // Usa cache se ainda estiver válido
+      if (cacheMusicas && (agora - cacheTimestamp < CACHE_DURATION)) {
+        todasMusicas = cacheMusicas;
+        renderizarMusicas(todasMusicas);
+        return;
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, "musicas"));
+        cacheMusicas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        cacheMusicas.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+        
+        cacheTimestamp = agora;
+        todasMusicas = cacheMusicas;
+
+        renderizarMusicas(todasMusicas);
+      } catch (e) {
+        console.error("Erro ao carregar músicas:", e);
+        alert("Erro ao carregar lista de músicas.");
+      }
     }
 
     function renderizarMusicas(musicas) {
@@ -92,6 +115,7 @@
           <div class="musica-titulo">${musica.titulo}</div>
           <div class="musica-info">
             ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
+            ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
           </div>
           ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
         `;
@@ -144,26 +168,41 @@
       window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     }
 
+    // Filtro de busca
     document.getElementById('busca').addEventListener('input', (e) => {
       const termo = e.target.value.toLowerCase().trim();
-      const filtradas = termo ? todasMusicas.filter(m => 
-        m.titulo.toLowerCase().includes(termo) || (m.tags && m.tags.toLowerCase().includes(termo))
-      ) : todasMusicas;
+      
+      if (!termo) {
+        renderizarMusicas(todasMusicas);
+        return;
+      }
+
+      const filtradas = todasMusicas.filter(m => 
+        m.titulo.toLowerCase().includes(termo) || 
+        (m.tags && m.tags.toLowerCase().includes(termo)) ||
+        (m.versao && m.versao.toLowerCase().includes(termo))
+      );
+      
       renderizarMusicas(filtradas);
     });
 
     window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
       slotIndex = parseInt(params.get('slot')) || 0;
+      
       await carregarMusicas();
     };
   </script>
 </head>
 <body>
   <div class="container">
-    <input type="text" id="busca" class="search-bar" placeholder="Buscar por título ou tag...">
+    <input type="text" id="busca" class="search-bar" placeholder="Buscar por título, versão ou tag...">
     <div id="listaMusicas"></div>
-    <button onclick="window.close()" style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer;">Fechar</button>
+    
+    <button onclick="window.close()" 
+            style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; width:100%;">
+      Fechar
+    </button>
   </div>
 </body>
 </html>

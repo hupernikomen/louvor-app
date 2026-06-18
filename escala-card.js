@@ -4,11 +4,11 @@
 
 function getTipoCultoColor(tipo) {
   const t = (tipo || "").toLowerCase().trim();
-  if (t.includes("louvor") || t.includes("pregação")) return "#f37070";
-  if (t.includes("oração") || t.includes("doutrina")) return "#2b90b2ff";
-  if (t.includes("ebd") || t.includes("EBD")) return "#2b9030ff";
-  if (t.includes("evento")) return "#9b59b6";
-  if (t.includes("especial")) return "#f39c12";
+  if (t.includes("louvor") || t.includes("pregação")) return "#793838ff";
+  if (t.includes("oração") || t.includes("doutrina")) return "#1c5c72ff";
+  if (t.includes("ebd") || t.includes("EBD")) return "#1f6522ff";
+  if (t.includes("evento")) return "#643975ff";
+  if (t.includes("especial")) return "#734b09ff";
   return "#34495e99";
 }
 

@@ -62,14 +62,19 @@
 
       let html = '';
       musicasEmEnsaio.forEach(m => {
+        const versaoHTML = m.versao && m.versao.trim() !== ''
+          ? `<div class="versao-musica">${m.versao}</div>`
+          : '';
+
         html += `
-          <div class="musica-ensaio-item" >
-            ${m.titulo} ${m.tom ? `(${m.tom})` : ''}
+          <div class="musica-ensaio-item" onclick="abrirEdicaoMusica('${m.id}')">
+            <div class="musica-titulo">${m.titulo}</div>
+            ${versaoHTML}
+            ${m.tom ? `<div class="tom-musica">Tom: ${m.tom}</div>` : ''}
           </div>`;
       });
       container.innerHTML = html;
     }
-
     window.abrirEdicaoMusica = function (id) {
       window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     };
@@ -342,8 +347,7 @@
       margin-bottom: 28px;
       background: #fff;
       box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.05);
-      padding: 18px 0 32px 0;
-      border-radius: 0 0 18px 18px;
+      padding: 18px 0 22px 0;
     }
 
     .musicas-ensaio h3 {
@@ -355,7 +359,7 @@
 
     .scroll-horizontal {
       display: flex;
-      gap: 10px;
+      gap: 6px;
       overflow-x: auto;
       padding: 0 18px;
       /* um pouco mais de espaço embaixo */
@@ -369,13 +373,31 @@
 
     .musica-ensaio-item {
       background: #fff;
-      border: 1px solid #e67e22;
-      padding: 18px;
-      border-radius: 16px;
+      border: .3px solid #aaa;
+      padding: 16px;
+      border-radius: 18px;
       white-space: nowrap;
       font-size: 0.95rem;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s;
+    }
+
+    .musica-titulo {
+      font-weight: 400;
+      color: #2c3e50;
+    }
+
+    .versao-musica {
+      font-size: 0.75rem;
+      color: #999;
+      font-style: italic;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .tom-musica {
+      font-size: 0.85rem;
+      color: #27ae60;
     }
 
     .header {
@@ -391,7 +413,7 @@
     .icon-btn {
       background: none;
       border: none;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       color: #2c3e50;
       padding: 8px;
       border-radius: 12px;
@@ -399,9 +421,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 48px;
+      height: 46px;
       /* força altura igual */
-      width: 48px;
+      width: 46px;
       /* força largura igual */
     }
 
@@ -414,6 +436,7 @@
     .header-right {
       display: flex;
       align-items: center;
+      gap: 8px;
     }
   </style>
 </head>
@@ -421,7 +444,7 @@
 <body>
   <header class="header">
     <div class="header-left">
-      <button onclick="recarregarPaginaInicial()" class="icon-btn" title="Início">
+      <button style="margin-left: 6px;" onclick="recarregarPaginaInicial()" class="icon-btn" title="Início">
         <ion-icon name="home-outline"></ion-icon>
       </button>
     </div>

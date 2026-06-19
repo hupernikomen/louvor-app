@@ -40,19 +40,28 @@
 
     .musica-item {
       background: white;
-      padding: 16px;
-      margin-bottom: 10px;
+      padding: 16px 12px;
+      margin-bottom: 12px;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      cursor: pointer;
       transition: all 0.2s;
-      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      border: 1px solid #eee;
     }
 
     .musica-item:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      border: 2px solid #3498db;
+      border-color: #3498db;
+    }
+
+    .musica-content {
+      flex: 1;
+      padding-right: 12px;
+      border-right: 1px solid #f0f0f0;   /* Linha separadora */
     }
 
     .musica-titulo {
@@ -76,17 +85,38 @@
       font-size: 0.8rem;
       margin-right: 6px;
     }
+
+    .btn-editar {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #f39c12, #e67e22);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(243, 156, 18, 0.3);
+    }
+
+    .btn-editar:hover {
+      background: linear-gradient(135deg, #e67e22, #d35400);
+      transform: scale(1.05);
+    }
   </style>
 
   <script type="module">
-    import { getMusicas, carregarTodosDados } from './app-state.js';   // ← ALTERADO
+    import { getMusicas, carregarTodosDados } from './app-state.js';
 
     let todasMusicas = [];
     let slotIndex = 0;
 
     async function carregarMusicas() {
       try {
-        await carregarTodosDados();        // Garante carregamento único
+        await carregarTodosDados();
         todasMusicas = getMusicas();
         renderizarMusicas(todasMusicas);
       } catch (e) {
@@ -109,15 +139,28 @@
         div.className = 'musica-item';
 
         div.innerHTML = `
-        <div class="musica-titulo">${musica.titulo}</div>
-        <div class="musica-info">
-          ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
-          ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
-        </div>
-        ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
-      `;
+          <div class="musica-content">
+            <div class="musica-titulo">${musica.titulo}</div>
+            <div class="musica-info">
+              ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
+              ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
+            </div>
+            ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
+          </div>
 
-        div.addEventListener('click', () => selecionarMusica(musica));
+          <button onclick="editarMusica('${musica.id}'); event.stopImmediatePropagation();" 
+                  class="btn-editar" title="Editar música">
+            <ion-icon name="create-outline"></ion-icon>
+            Editar
+          </button>
+        `;
+
+        div.addEventListener('click', (e) => {
+          if (!e.target.closest('.btn-editar')) {
+            selecionarMusica(musica);
+          }
+        });
+
         container.appendChild(div);
       });
     }
@@ -132,6 +175,10 @@
       }
       window.close();
     }
+
+    window.editarMusica = function(id) {
+      window.open(`cadastro-musicas.html?id=${id}`, '_blank');
+    };
 
     // Filtro de busca
     document.getElementById('busca').addEventListener('input', (e) => {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,7 @@
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { doc, getDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import { getMusicas, getMembros, getCultosFixos, carregarTodosDados } from './app-state.js';  // ← ALTERADO
+    import { getMusicas, getMembros, getCultosFixos, carregarTodosDados } from './app-state.js';  // ← ALTERADO
 
     let escalaId = null;
     let escalaAtual = null;
@@ -27,19 +28,19 @@ import { getMusicas, getMembros, getCultosFixos, carregarTodosDados } from './ap
       isNovaEscala = params.get('nova') === 'true';
     }
 
-async function carregarDados() {
-    try {
-      await carregarTodosDados();   // ← Garante carregamento único
+    async function carregarDados() {
+      try {
+        await carregarTodosDados();   // ← Garante carregamento único
 
-      todasMusicas = getMusicas();
-      todosMembros = getMembros();
-      cultosFixos = getCultosFixos();
+        todasMusicas = getMusicas();
+        todosMembros = getMembros();
+        cultosFixos = getCultosFixos();
 
-      preencherTipoCulto();
-    } catch (e) {
-      console.error("Erro ao carregar dados:", e);
+        preencherTipoCulto();
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+      }
     }
-  }
 
     function preencherTipoCulto() {
       const select = document.getElementById('tipoCulto');
@@ -61,13 +62,19 @@ async function carregarDados() {
 
       musicasSelecionadas.forEach((musica, index) => {
         const nome = musica ? `${musica.titulo} ${musica.tom ? `(${musica.tom})` : ''}` : 'Selecionar uma louvor...';
+
+        const versaoHTML = musica && musica.versao
+          ? `<small style="color:#e67e22; display:block; margin-top:4px;">${musica.versao}</small>`
+          : '';
+
         container.innerHTML += `
-          <div class="musica-slot">
-            <label><strong>${index + 1}ª Música</strong></label>
-            <div onclick="abrirSelecaoMusica(event, ${index})" class="musica-campo">
-              ${nome}
-            </div>
-          </div>`;
+      <div class="musica-slot">
+        <label><strong>${index + 1}ª Música</strong></label>
+        <div onclick="abrirSelecaoMusica(event, ${index})" class="musica-campo">
+          ${nome}
+          ${versaoHTML}
+        </div>
+      </div>`;
       });
 
       container.innerHTML += `
@@ -76,12 +83,12 @@ async function carregarDados() {
         </button>`;
     }
 
-    window.adicionarNovaMusica = function() {
+    window.adicionarNovaMusica = function () {
       musicasSelecionadas.push(null);
       renderizarMusicas();
     };
 
-    window.abrirSelecaoMusica = function(e, slotIndex) {
+    window.abrirSelecaoMusica = function (e, slotIndex) {
       e.stopPropagation();
       const width = 820;
       const height = 720;
@@ -95,11 +102,21 @@ async function carregarDados() {
       );
     };
 
-    window.addEventListener('message', function(e) {
+    window.addEventListener('message', function (e) {
       if (e.data && e.data.type === 'musicaSelecionada') {
         const { slot, musica } = e.data;
+
+        console.log('🎵 Música recebida:', musica); // ← Debug
+
         if (musica && typeof slot === 'number') {
-          musicasSelecionadas[slot] = { titulo: musica.titulo, tom: musica.tom };
+          // Salva TODOS os campos importantes da música
+          musicasSelecionadas[slot] = {
+            titulo: musica.titulo || '',
+            versao: musica.versao || '',
+            tom: musica.tom || '',
+            tags: musica.tags || '',
+            id: musica.id || ''          // opcional, mas útil
+          };
           renderizarMusicas();
         }
       }
@@ -108,7 +125,7 @@ async function carregarDados() {
     function renderizarEquipe() {
       const container = document.getElementById('equipeContainer');
       container.innerHTML = '<h3 style="margin: 20px 0 15px 0;">Equipe de Louvor</h3>';
-      
+
       if (todosMembros.length === 0) {
         container.innerHTML += '<p style="color:#999;">Nenhum membro cadastrado.</p>';
         return;
@@ -197,13 +214,13 @@ async function carregarDados() {
       }
     };
 
-    window.cancelarEdicao = function() {
+    window.cancelarEdicao = function () {
       if (confirm("Deseja cancelar as alterações?")) window.history.back();
     };
 
     window.excluirEscala = async function () {
       if (!confirm("Excluir esta escala permanentemente?")) return;
-      await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => {});
+      await deleteDoc(doc(db, "escalasCulto", escalaId)).catch(() => { });
       alert("✅ Escala excluída com sucesso!");
       window.history.back();
     };
@@ -212,14 +229,50 @@ async function carregarDados() {
   </script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: #fff; min-height: 100vh; }
-    .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
-    .card { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 1.5rem; }
-    label { display: block; margin: 1.2rem 0 0.5rem; font-weight: 500; }
-    input, select, textarea { width: 100%; padding: 0.9rem; border: 2px solid #e2e8f0; border-radius: 10px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    .musica-slot { margin-bottom: 1.6rem; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #fff;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin: 1.2rem 0 0.5rem;
+      font-weight: 500;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.9rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+    }
+
+    .musica-slot {
+      margin-bottom: 1.6rem;
+    }
+
     .musica-campo {
       padding: 14px 16px;
       background: #f8f9fa;
@@ -231,6 +284,7 @@ async function carregarDados() {
       cursor: pointer;
       transition: all 0.2s;
     }
+
     .musica-campo:hover {
       border-color: #3498db;
       background: #f1f8ff;
@@ -250,12 +304,29 @@ async function carregarDados() {
       margin-top: 8px;
     }
 
-    button { width: 100%; padding: 1rem; border: none; border-radius: 10px; font-size: 1.1rem; margin-top: 1rem; cursor: pointer; }
-    .btn-salvar { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
-    .btn-cancelar { background: #a0aec0; color: white; }
-    .btn-excluir { 
-      background: linear-gradient(135deg, #e74c3c, #c0392b); 
-      color: white; 
+    button {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+
+    .btn-salvar {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+    }
+
+    .btn-cancelar {
+      background: #a0aec0;
+      color: white;
+    }
+
+    .btn-excluir {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
       margin-top: 10px;
     }
 
@@ -276,9 +347,19 @@ async function carregarDados() {
       border: 1px solid #e2e8f0;
     }
 
-    .membro-info { flex: 1; }
-    .membro-nome { font-weight: 600; color: #2c3e50; }
-    .membro-funcao { font-size: 0.9rem; color: #64748b; }
+    .membro-info {
+      flex: 1;
+    }
+
+    .membro-nome {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .membro-funcao {
+      font-size: 0.9rem;
+      color: #64748b;
+    }
 
     .switch {
       position: relative;
@@ -286,15 +367,25 @@ async function carregarDados() {
       width: 52px;
       height: 28px;
     }
-    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
     .slider {
       position: absolute;
       cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background-color: #cbd5e1;
       transition: .4s;
       border-radius: 28px;
     }
+
     .slider:before {
       position: absolute;
       content: "";
@@ -306,10 +397,17 @@ async function carregarDados() {
       transition: .4s;
       border-radius: 50%;
     }
-    input:checked + .slider { background-color: #27ae60; }
-    input:checked + .slider:before { transform: translateX(24px); }
+
+    input:checked+.slider {
+      background-color: #27ae60;
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(24px);
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <div id="header-placeholder"></div>
@@ -343,4 +441,5 @@ async function carregarDados() {
   <script src="header.js"></script>
   <script>carregarHeader('Criar Escala');</script>
 </body>
+
 </html>

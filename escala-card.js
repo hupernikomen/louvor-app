@@ -29,21 +29,20 @@ function criarEscalaCard(escala, isLogado = false, onAprovar = null, onEditar = 
   const corBadge = getTipoCultoColor(escala.tipoCulto || '');
 
   const musicasHTML = (escala.musicas && escala.musicas.length)
-    ? escala.musicas.map(m => {
-      console.log(m);
-      
-        const tomHTML = m.tom ? ` <span class="tom">(${m.tom})</span>` : '';
-        
-        const versao = (m.versao || '').trim();
-        const versaoHTML = versao ? `<div class="versao-item">${m.versao}</div>` : '';
+  ? escala.musicas.map(m => {
+    
+      const tomHTML = m.tom ? ` <span class="tom">(${m.tom})</span>` : '';
+      const versaoHTML = (m.versao && m.versao.trim()) 
+        ? `<div class="versao-item">${m.versao}</div>` 
+        : '';
 
-        return `
-          <div class="musica-item">
-            <span class="musica-titulo">${m.titulo}${tomHTML}</span>
-            ${versaoHTML}
-          </div>`;
-      }).join('')
-    : '<p style="color:#999; font-style:italic; padding:8px 0;">Nenhuma música definida</p>';
+      return `
+        <div class="musica-item">
+          <span class="musica-titulo">${m.titulo}${tomHTML}</span>
+          ${versaoHTML}
+        </div>`;
+    }).join('')
+  : '<p style="color:#999; font-style:italic; padding:8px 0;">Nenhuma música definida</p>';
 
   const equipeHTML = (escala.equipe && escala.equipe.length)
     ? escala.equipe.map(m => `<span class="membro-tag">${m.nome}</span>`).join('')

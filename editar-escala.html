@@ -105,17 +105,13 @@
     window.addEventListener('message', function (e) {
       if (e.data && e.data.type === 'musicaSelecionada') {
         const { slot, musica } = e.data;
-
-        console.log('🎵 Música recebida:', musica); // ← Debug
-
+        
         if (musica && typeof slot === 'number') {
-          // Salva TODOS os campos importantes da música
+          // Salva todos os campos importantes
           musicasSelecionadas[slot] = {
-            titulo: musica.titulo || '',
+            titulo: musica.titulo,
             versao: musica.versao || '',
-            tom: musica.tom || '',
-            tags: musica.tags || '',
-            id: musica.id || ''          // opcional, mas útil
+            tom: musica.tom || ''
           };
           renderizarMusicas();
         }

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,7 +52,9 @@
       gap: 1.25rem;
     }
 
-    input, textarea, select {
+    input,
+    textarea,
+    select {
       width: 100%;
       padding: 14px 16px;
       border: 2px solid #e9ecef;
@@ -60,10 +63,12 @@
       background: #fafbfc;
     }
 
-    input:focus, textarea:focus, select:focus {
+    input:focus,
+    textarea:focus,
+    select:focus {
       outline: none;
       border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
     }
 
     textarea {
@@ -98,6 +103,7 @@
   <script type="module">
     import { db } from './firebase-config.js';
     import { collection, addDoc, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+    import { carregarTodosDados } from './app-state.js';   // ← Adicionado
 
     const musicasRef = collection(db, "musicas");
     let musicaEditandoId = null;
@@ -128,6 +134,12 @@
       }
     }
 
+    async function recarregarDados() {
+      if (typeof refreshData === 'function') {
+        await refreshData();
+      }
+    }
+
     function verificarEdicaoUrl() {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
@@ -141,7 +153,7 @@
 
       const musica = {
         titulo: document.getElementById('titulo').value.trim(),
-        versao: document.getElementById('versao').value.trim(),               // novo campo
+        versao: document.getElementById('versao').value.trim(),
         tom: document.getElementById('tom').value.trim().toUpperCase() || null,
         tags: document.getElementById('tags').value.trim(),
         observacoes: document.getElementById('observacoes').value.trim(),
@@ -160,6 +172,8 @@
           alert("✅ Música cadastrada com sucesso!");
         }
 
+        await recarregarDados();   // ← Atualiza cache global
+
         e.target.reset();
         musicaEditandoId = null;
         document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
@@ -177,6 +191,7 @@
       try {
         await deleteDoc(doc(db, "musicas", musicaEditandoId));
         alert("✅ Música excluída com sucesso!");
+        await recarregarDados();   // ← Atualiza cache global
 
         musicaEditandoId = null;
         document.querySelector('button[type="submit"]').innerHTML = 'Salvar Música';
@@ -229,4 +244,5 @@
   <script src="header.js"></script>
   <script>carregarHeader('Músicas');</script>
 </body>
+
 </html>

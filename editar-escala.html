@@ -11,7 +11,7 @@
   <script type="module">
     import { db, auth } from './firebase-config.js';
     import { doc, getDoc, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-    import { getMusicas, getMembros, getCultosFixos } from './data-service.js';
+import { getMusicas, getMembros, getCultosFixos, carregarTodosDados } from './app-state.js';  // ← ALTERADO
 
     let escalaId = null;
     let escalaAtual = null;
@@ -27,18 +27,19 @@
       isNovaEscala = params.get('nova') === 'true';
     }
 
-    async function carregarDados() {
-      try {
-        [todasMusicas, todosMembros, cultosFixos] = await Promise.all([
-          getMusicas(),
-          getMembros(),
-          getCultosFixos()
-        ]);
-        preencherTipoCulto();
-      } catch (e) {
-        console.error("Erro ao carregar dados:", e);
-      }
+async function carregarDados() {
+    try {
+      await carregarTodosDados();   // ← Garante carregamento único
+
+      todasMusicas = getMusicas();
+      todosMembros = getMembros();
+      cultosFixos = getCultosFixos();
+
+      preencherTipoCulto();
+    } catch (e) {
+      console.error("Erro ao carregar dados:", e);
     }
+  }
 
     function preencherTipoCulto() {
       const select = document.getElementById('tipoCulto');

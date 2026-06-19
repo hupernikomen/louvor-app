@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,14 +10,24 @@
   <script nomodule src="https://cdn.jsdelivr.net/npm/ionicons/7.1.0/dist/ionicons/ionicons.js"></script>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Segoe UI', sans-serif; 
-      background: #f8f9fa; 
-      color: #333; 
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      color: #333;
       min-height: 100vh;
     }
-    .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
 
     .search-bar {
       width: 100%;
@@ -32,18 +43,30 @@
       padding: 16px;
       margin-bottom: 10px;
       border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
       cursor: pointer;
       transition: all 0.2s;
       position: relative;
     }
+
     .musica-item:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
       border: 2px solid #3498db;
     }
-    .musica-titulo { font-size: 1.1rem; font-weight: 600; color: #2c3e50; }
-    .musica-info { font-size: 0.95rem; color: #555; margin-top: 6px; }
+
+    .musica-titulo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .musica-info {
+      font-size: 0.95rem;
+      color: #555;
+      margin-top: 6px;
+    }
+
     .tag {
       display: inline-block;
       background: #e3f2fd;
@@ -56,14 +79,15 @@
   </style>
 
   <script type="module">
-    import { getMusicas } from './data-service.js';
+    import { getMusicas, carregarTodosDados } from './app-state.js';   // ← ALTERADO
 
     let todasMusicas = [];
     let slotIndex = 0;
 
     async function carregarMusicas() {
       try {
-        todasMusicas = await getMusicas();
+        await carregarTodosDados();        // Garante carregamento único
+        todasMusicas = getMusicas();
         renderizarMusicas(todasMusicas);
       } catch (e) {
         console.error("Erro ao carregar músicas:", e);
@@ -83,15 +107,15 @@
       musicas.forEach(musica => {
         const div = document.createElement('div');
         div.className = 'musica-item';
-        
+
         div.innerHTML = `
-          <div class="musica-titulo">${musica.titulo}</div>
-          <div class="musica-info">
-            ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
-            ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
-          </div>
-          ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
-        `;
+        <div class="musica-titulo">${musica.titulo}</div>
+        <div class="musica-info">
+          ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
+          ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
+        </div>
+        ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
+      `;
 
         div.addEventListener('click', () => selecionarMusica(musica));
         container.appendChild(div);
@@ -112,18 +136,18 @@
     // Filtro de busca
     document.getElementById('busca').addEventListener('input', (e) => {
       const termo = e.target.value.toLowerCase().trim();
-      
+
       if (!termo) {
         renderizarMusicas(todasMusicas);
         return;
       }
 
-      const filtradas = todasMusicas.filter(m => 
-        m.titulo.toLowerCase().includes(termo) || 
+      const filtradas = todasMusicas.filter(m =>
+        m.titulo.toLowerCase().includes(termo) ||
         (m.tags && m.tags.toLowerCase().includes(termo)) ||
         (m.versao && m.versao.toLowerCase().includes(termo))
       );
-      
+
       renderizarMusicas(filtradas);
     });
 
@@ -134,15 +158,17 @@
     };
   </script>
 </head>
+
 <body>
   <div class="container">
     <input type="text" id="busca" class="search-bar" placeholder="Buscar por título, versão ou tag...">
     <div id="listaMusicas"></div>
-    
-    <button onclick="window.close()" 
-            style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; width:100%;">
+
+    <button onclick="window.close()"
+      style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; width:100%;">
       Fechar
     </button>
   </div>
 </body>
+
 </html>

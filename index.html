@@ -220,7 +220,7 @@
       align-items: center;
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
       z-index: 100;
-      background: #fff;
+      background: #444;
     }
 
     .header-left,
@@ -331,12 +331,14 @@
 
     .musicas-ensaio {
       margin-bottom: 28px;
-      background: #fff;
+      background: #444;
       box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.05);
       padding: 18px 0 22px 0;
+      border-bottom-left-radius: 32px;
     }
 
     .musicas-ensaio h3 {
+      color: #fff;
       margin-bottom: 10px;
       font-weight: 400;
       font-size: 1rem;
@@ -357,8 +359,8 @@
     }
 
     .musica-ensaio-item {
-      background: #fff;
-      border: .3px solid #aaa;
+      background: #555;
+      /* border: .3px solid #aaa; */
       padding: 16px;
       border-radius: 18px;
       white-space: nowrap;
@@ -366,9 +368,13 @@
       transition: all 0.2s;
     }
 
+      .musica-ensaio-item .musica-titulo {
+        color: #fff;
+      }
+
     .versao-musica {
       font-size: 0.75rem;
-      color: #999;
+      color: #aaa;
       font-style: italic;
       margin-bottom: 4px;
       text-transform: uppercase;
@@ -388,7 +394,7 @@
       background: none;
       border: none;
       font-size: 1.4rem;
-      color: #2c3e50;
+      color: #fff;
       padding: 8px;
       border-radius: 12px;
       cursor: pointer;

@@ -20,6 +20,8 @@
     let mostrandoAnteriores = false;
 
     onAuthStateChanged(auth, (user) => {
+      console.log(user);
+      
       usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
       atualizarMenu(user);
     });

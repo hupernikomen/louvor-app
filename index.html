@@ -20,7 +20,7 @@
     let mostrandoAnteriores = false;
 
     onAuthStateChanged(auth, (user) => {
-      
+
       usuarioLogado = !!(user && user.email === "hupcontato@gmail.com");
       atualizarMenu(user);
     });
@@ -58,20 +58,16 @@
       const titulo = document.getElementById('tituloEnsaio');
 
       if (musicas.length === 0) {
-        titulo.innerHTML = `Louvores para Ensaios <span style="font-weight:400; color:#888;">(0)</span>`;
-        container.innerHTML = `<p style="color:#888; text-align:center; padding:12px 0;">Nenhuma música em ensaio no momento.</p>`;
         return;
       }
 
-      titulo.innerHTML = `Louvores para ensaios <span style="font-weight:500; color:#e67e22;">(${musicas.length})</span>`;
 
       let html = '';
       musicas.forEach(m => {
         const versaoHTML = m.versao && m.versao.trim() !== ''
           ? `<div class="versao-musica">${m.versao}</div>`
           : '';
-          console.log(usuarioLogado);
-          
+
 
         const clicavel = usuarioLogado
           ? `onclick="abrirEdicaoMusica('${m.id}')"`
@@ -91,7 +87,7 @@
 
     window.abrirEdicaoMusica = function (id) {
       console.log(id, 'id');
-      
+
       window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     };
 
@@ -212,18 +208,23 @@
       min-height: 100vh;
     }
 
-    .header {
+    .top {
       position: sticky;
       top: 0;
+      background: #f6f8f9;
+
+    }
+
+    .header {
       padding: 16px 1rem 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 100;
-      background: #f6f8f9;
+      z-index: 0;
     }
 
-    .header-left, .header-right {
+    .header-left,
+    .header-right {
       display: flex;
       align-items: center;
       gap: 10px;
@@ -235,15 +236,14 @@
     }
 
     .musicas-ensaio {
-    background: #f6f8f9;
-      padding: 18px 0 22px 0;
+      padding: 12px 0 22px 0;
     }
 
     .musicas-ensaio h3 {
       margin-top: 10px;
-      font-weight: 400;
+      font-weight: 500;
       font-size: 1rem;
-      margin-left: 32px;
+      margin-left: 28px;
     }
 
     #tituloFeed {
@@ -254,23 +254,24 @@
 
     #feed {
       background: #fdfdfd;
-      padding: 6px;
+      padding: 16px 0;
       margin-top: -20px;
       border-top-left-radius: 32px;
       border-top-right-radius: 32px;
-      box-shadow: 0px -4px 10px rgba(0, 0, 0, 0.06);
+      box-shadow: 0px -2px 12px rgba(0, 0, 0, 0.06);
+      z-index: 99;
+      position: relative;
     }
 
     .escala-card {
       margin-bottom: 1.5rem;
       overflow: hidden;
-      padding: 6px;
+      padding: 22PX 6px;
       border-bottom: 1px solid #dadadab6;
     }
 
     .card-header {
-      background: #fff;
-      padding: 14px 22px;
+      padding: 0px 22px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -278,24 +279,52 @@
       gap: 8px;
     }
 
-    .tipo-culto { font-size: 0.9rem; font-weight: 500; text-transform: uppercase; }
-    .data { font-weight: 500; color: #2c3e50; font-size: 0.85rem; text-transform: uppercase; }
-    .musicas { padding: 16px 22px; }
-    .musica-item { font-size: 0.95rem; padding: 2px 0; }
-    .tom { color: #27ae60; font-weight: 500; }
+    .tipo-culto {
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
 
-    .equipe { padding: 0 12px 12px; }
-    .membros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .data {
+      font-weight: 500;
+      color: #2c3e50;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    .musicas {
+      padding: 16px 22px;
+    }
+
+    .musica-item {
+      font-size: 0.95rem;
+    }
+
+    .tom {
+      color: #27ae60;
+      font-weight: 500;
+    }
+
+    .equipe {
+      padding: 0 12px 12px;
+    }
+
+    .membros {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
     .membro-tag {
-      background: #e0e7ee;
       color: #334155;
       padding: 6px 10px;
       border-radius: 20px;
       font-size: 0.85rem;
+      background: #eaf1f9;
     }
 
     .observacoes {
-      background: #fff;
       padding: 10px 22px;
       border-top: 1px solid #eee;
       color: #222;
@@ -306,18 +335,21 @@
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding: 1rem 0px 1rem 18px;
+      padding: 1rem 0px 1rem 6px;
     }
-    .scroll-horizontal::-webkit-scrollbar { display: none; }
+
+    .scroll-horizontal::-webkit-scrollbar {
+      display: none;
+    }
 
     .musica-ensaio-item {
       background: #fff;
-      padding: 16px;
-      border-radius: 18px;
+      padding: 16px 22px;
+      border-radius: 28px;
       white-space: nowrap;
       font-size: 0.95rem;
       transition: all 0.2s;
-      box-shadow: 2px 4px 4px rgba(0, 0, 0, 0.06);
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.06);
     }
 
     .versao-musica {
@@ -328,10 +360,19 @@
       text-transform: uppercase;
     }
 
-    .tom-musica { font-size: 0.85rem; color: #27ae60; }
-    .musica-titulo { font-weight: 400; color: #2c3e50; }
+    .tom-musica {
+      font-size: 0.85rem;
+      color: #27ae60;
+    }
 
-    .loading, .empty-state, .error {
+    .musica-titulo {
+      font-weight: 400;
+      color: #2c3e50;
+    }
+
+    .loading,
+    .empty-state,
+    .error {
       text-align: center;
       padding: 80px 20px;
       color: #777;
@@ -360,41 +401,47 @@
 </head>
 
 <body>
-  <header class="header">
-    <div class="header-left">
-      <button onclick="recarregarPaginaInicial()" class="icon-btn" title="Início">
-        <ion-icon name="albums-outline"></ion-icon>
-      </button>
-    </div>
+  <div class="top">
 
-    <div class="header-right">
-      <div id="menuLogado" style="display: none; gap: 8px;">
+    <header class="header">
+      <div class="header-left">
+        <button onclick="recarregarPaginaInicial()" class="icon-btn" title="Início">
+          <ion-icon name="albums-outline"></ion-icon>
+        </button>
+      </div>
 
-        <a href="menu.html" class="icon-btn" title="Menu Principal">
-          <ion-icon name="options-outline"></ion-icon>
+      <div class="header-right">
+        <div id="menuLogado" style="display: none; gap: 8px;">
+
+          <a href="menu.html" class="icon-btn" title="Menu Principal">
+            <ion-icon name="options-outline"></ion-icon>
+          </a>
+        </div>
+
+        <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
+          <ion-icon name="musical-note-outline"></ion-icon>
+        </button>
+
+        <button onclick="alternarEscalas()" class="icon-btn" title="Ver Anteriores">
+          <ion-icon name="time-outline"></ion-icon>
+        </button>
+
+        <a href="login.html" id="btnLogin" class="icon-btn" title="Fazer Login">
+          <ion-icon name="lock-open-outline"></ion-icon>
         </a>
       </div>
 
-      <button onclick="abrirSelecionarMusica()" class="icon-btn" title="Louvores">
-        <ion-icon name="musical-note-outline"></ion-icon>
-      </button>
-
-      <button onclick="alternarEscalas()" class="icon-btn" title="Ver Anteriores">
-        <ion-icon name="time-outline"></ion-icon>
-      </button>
-
-      <a href="login.html" id="btnLogin" class="icon-btn" title="Fazer Login">
-        <ion-icon name="lock-open-outline"></ion-icon>
-      </a>
+    </header>
+    <div class="musicas-ensaio">
+      <h3 id="tituloEnsaio">NOVOS LOUVORES</h3>
+      <div id="musicasEnsaioContainer" class="scroll-horizontal"></div>
+      <h2 id="tituloFeed"></h2>
     </div>
-  </header>
+  </div>
+
 
   <div class="container">
-    <div class="musicas-ensaio">
-      <h3 id="tituloEnsaio">Louvores para ensaios</h3>
-      <div id="musicasEnsaioContainer" class="scroll-horizontal"></div>
-      <h2 id="tituloFeed" ></h2>
-    </div>
+
 
     <div id="feed"></div>
   </div>

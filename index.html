@@ -69,6 +69,8 @@
         const versaoHTML = m.versao && m.versao.trim() !== ''
           ? `<div class="versao-musica">${m.versao}</div>`
           : '';
+          console.log(usuarioLogado);
+          
 
         const clicavel = usuarioLogado
           ? `onclick="abrirEdicaoMusica('${m.id}')"`

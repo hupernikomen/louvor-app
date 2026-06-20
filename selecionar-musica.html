@@ -23,71 +23,100 @@
       min-height: 100vh;
     }
 
+    .header {
+      padding: 16px 1rem 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 0;
+    }
+
+    .header-left,
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
     .container {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 1rem;
+      padding: 12px;
     }
 
     .search-bar {
       width: 100%;
-      padding: 16px;
-      border: 1px solid #404040;
-      border-radius: 12px;
+      padding: 0 22px;
+      border: 0;
+      height: 55px;
+      border-radius: 32px;
       font-size: 1.1rem;
       margin-bottom: 1.5rem;
     }
 
     .musica-item {
       background: white;
-      padding: 16px 12px;
-      margin-bottom: 12px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: 16px 22px;
+      margin-bottom: 6px;
+      border-radius: 22px;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 16px;
       cursor: pointer;
       border: 1px solid #eee;
     }
 
-    .musica-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      border-color: #3498db;
-    }
+
 
     .musica-content {
       flex: 1;
       padding-right: 12px;
-      border-right: 1px solid #f0f0f0;   /* Linha separadora */
+      border-right: 1px solid #f0f0f0;
+      /* Linha separadora */
     }
 
     .musica-titulo {
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1rem;
+      font-weight: 500;
       color: #2c3e50;
     }
 
     .musica-info {
       font-size: 0.95rem;
-      color: #555;
       margin-top: 6px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: #2c3e50;
+      padding: 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 46px;
+      width: 46px;
+    }
+
+    .icon-btn:hover {
+      background: #f1f3f5;
+      color: #3498db;
     }
 
     .tag {
       display: inline-block;
-      background: #e3f2fd;
       color: #1976d2;
-      padding: 3px 10px;
       border-radius: 20px;
       font-size: 0.8rem;
+      margin-top: 12px;
       margin-right: 6px;
     }
 
     .btn-editar {
-      padding: 12px 20px;
+      padding: 12px 12px;
       background: linear-gradient(135deg, #f39c12, #e67e22);
       color: white;
       border: none;
@@ -99,7 +128,6 @@
       gap: 6px;
       flex-shrink: 0;
       white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(243, 156, 18, 0.3);
     }
 
     .btn-editar:hover {
@@ -142,15 +170,14 @@
           <div class="musica-content">
             <div class="musica-titulo">${musica.titulo}</div>
             <div class="musica-info">
-              ${musica.tom ? `<strong>Tom:</strong> ${musica.tom}` : ''}
-              ${musica.versao ? `<br><small>Versão: ${musica.versao}</small>` : ''}
+              <div>${musica.tom ? `Tom: ${musica.tom}` : ''}</div>
+              <div>${musica.versao ? `Versão: ${musica.versao}` : ''}</div>
             </div>
             ${musica.tags ? `<div>${musica.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('')}</div>` : ''}
           </div>
 
           <button onclick="editarMusica('${musica.id}'); event.stopImmediatePropagation();" 
                   class="btn-editar" title="Editar música">
-            <ion-icon name="create-outline"></ion-icon>
             Editar
           </button>
         `;
@@ -176,7 +203,7 @@
       window.close();
     }
 
-    window.editarMusica = function(id) {
+    window.editarMusica = function (id) {
       window.open(`cadastro-musicas.html?id=${id}`, '_blank');
     };
 
@@ -203,18 +230,29 @@
       slotIndex = parseInt(params.get('slot')) || 0;
       await carregarMusicas();
     };
+
+
   </script>
 </head>
 
 <body>
+
+  <header class="header">
+    <div class="header-left">
+      <button onclick="window.close()" class="icon-btn" title="Início">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+    </div>
+
+
+
+  </header>
+
   <div class="container">
     <input type="text" id="busca" class="search-bar" placeholder="Buscar por título, versão ou tag...">
     <div id="listaMusicas"></div>
 
-    <button onclick="window.close()"
-      style="margin-top:20px; padding:12px 30px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; width:100%;">
-      Fechar
-    </button>
+
   </div>
 </body>
 
